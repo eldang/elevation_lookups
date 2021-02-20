@@ -23,6 +23,6 @@ I'm also doing some research on what existing bike routefinding packages use.
 
 1. Store local copies of data sources, at least for the areas that we're actively building models for.
 2. On startup, look for missing or potentially stale data and download/replace as appropriate.
-3. While running, serve a simple [REST? that seems like the way to go] API that can be queried with individual points to get their elevation, or a pair of points to get the elevation gain from 1 to 2.  Leave it to the querying process to calculate gradients.  For a pair of points, should we even calculate the delta or just return the two elevations?
+3. While running, serve a simple [REST? that seems like the way to go] API that can be queried with individual points to get their elevation, or a pair of points to get the elevation gain from 1 to 2.  Leave it to the querying process to calculate gradients.  For a pair of points, return the two elevations and the total climb between them, *which may be more than the delta*.
 4. When queried, use more local data if available, falling back to SRTM when none is.
 5. Extra credit: where multiple data sources are available, is it useful to have the API check more than one and warn about discrepancies?
