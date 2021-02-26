@@ -15,14 +15,19 @@ Thoughts so far:
 
 1. Definitely elevation at the middle of each intersection, so we can calculate grades between them.
 2. Probably also total climb for each line segment between two intersections, so that non-monotonic climbs aren't missed.
-3. Possibly also steepest segment characterisation, for unevenly steep blocks.
+3. [setting this aside for now] Possibly also steepest segment characterisation, for unevenly steep blocks.
 
 I'm also doing some research on what existing bike routefinding packages use.
 
 ## Roughly sketched out design
 
-1. Store local copies of data sources, at least for the areas that we're actively building models for.
-2. On startup, look for missing or potentially stale data and download/replace as appropriate.
-3. While running, serve a simple [REST? that seems like the way to go] API that can be queried with individual points to get their elevation, or a pair of points to get the elevation gain from 1 to 2.  Leave it to the querying process to calculate gradients.  For a pair of points, return the two elevations and the total climb between them, *which may be more than the delta*.
-4. When queried, use more local data if available, falling back to SRTM when none is.
+Data format: simple text files in which each row is one polyline, starting and ending at intersection middles.  Each row consists of a series of x,y coordinates separated by spaces; each coordinate is roughly a metre away from the previous.
+
+Script: runs as a batch, processing the input file and producing a text file as output, with rows that correspond to the rows of the input file.  Each row simply reports four numbers: start elevation, end elevation, total climb, total descent.
+
+Algorithm:
+1. Parse input file, exiting with an error if there are any parse failures.  While parsing it, count lines and points, and compute a bounding box.
+2. Use the bounding box to determine which data source to use, sticking to one consistent data source for one input file.  Use preferred local sources if available, falling back to a worldwide source (SRTM?) if not.
+3. Store local copies of data sources, and track when they were saved.  TBD: do we want to just download the required bbox, that + some padding, or the whole data source?
+4. Loop over the lines, computing the elevations and deltas as we go
 5. Extra credit: where multiple data sources are available, is it useful to have the API check more than one and warn about discrepancies?
