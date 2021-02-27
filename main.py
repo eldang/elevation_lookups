@@ -3,18 +3,31 @@
 # Look up elevation data for a batch of paths
 
 import logging
-import sys
 import time
 
+import click
 
 __author__ = "Eldan Goldenberg for A/B Street, February-March 2021"
 __license__ = "Apache"
 
 
-
-def main():
+@click.command()
+@click.option(
+    '--log',
+    type=click.Choice(
+        ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        case_sensitive=False
+    ),
+    default='INFO',
+    help='Logging level.  Only messages of the selected severity or higher will be emitted.'  # noqa: E501
+)
+def main(log):
     start_time = time.time()
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y%m%d %H:%M', level="INFO")
+    logging.basicConfig(
+        format='%(asctime)s %(levelname)s:\t%(message)s',
+        datefmt='%Y%m%d %H:%M',
+        level=log
+    )
     logging.debug("Starting run")
     logging.info("Run complete in %s.", elapsedTime(start_time))
 
@@ -43,9 +56,4 @@ def elapsedTime(start_time):
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except:  # noqa: E722
-        logging.error(sys.exc_info()[0])
-        import traceback
-        logging.error(traceback.format_exc())
+    main()
