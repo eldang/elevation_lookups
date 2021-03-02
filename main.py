@@ -16,17 +16,17 @@ __license__ = "Apache"
 @click.option(
     '--input_dir',
     default='input',
-    help='Specify an input directory or leave out for default location.'
+    help='Specify an input directory or leave out for default value: "input"'
 )
 @click.option(
     '--data_dir',
     default='data',
-    help='Specify a data directory or leave out for default location.'
+    help='Specify a data directory or leave out for default value: "data"'
 )
 @click.option(
     '--output_dir',
     default='output',
-    help='Specify an output directory or leave out for default location.'
+    help='Specify an output directory or leave out for default value: "output"'
 )
 @click.option(
     '--log',

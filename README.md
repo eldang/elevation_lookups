@@ -31,3 +31,11 @@ Algorithm:
 3. Store local copies of data sources, and track when they were saved.  TBD: do we want to just download the required bbox, that + some padding, or the whole data source?
 4. Loop over the lines, computing the elevations and deltas as we go
 5. Extra credit: where multiple data sources are available, is it useful to have the API check more than one and warn about discrepancies?
+
+Program / data structure:
+
+* main.py: main control loop
+* files.py: defines objects for file operations:
+	* input_file(): reads input files, reports stats back about them, and allows iteration through them
+	* output_file(): opens output files and writes to them
+* data.py: manages data sources
