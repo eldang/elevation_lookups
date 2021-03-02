@@ -38,15 +38,21 @@ __license__ = "Apache"
     help='Logging level.  Only messages of the selected severity or higher will be emitted.  Default: INFO'  # noqa: E501
 )
 @click.argument('input_file')
-def main(input_dir, data_dir, output_dir, input_file, log):
-    start_time = time.time()
+def main(
+    input_dir: str,
+    data_dir: str,
+    output_dir: str,
+    input_file: str,
+    log: str
+) -> None:
+    start_time: float = time.time()
     logging.basicConfig(
         format='%(asctime)s %(levelname)s:\t%(message)s',
         datefmt='%Y%m%d %H:%M',
         level=log
     )
     logging.debug("Starting run")
-    n_rows = 0
+    n_rows: int = 0
     with open(os.path.join(input_dir, input_file)) as infile:
         for row in infile:
             n_rows += 1
@@ -57,13 +63,13 @@ def main(input_dir, data_dir, output_dir, input_file, log):
 
 
 
-def elapsedTime(start_time):
-    seconds = time.time() - start_time
+def elapsedTime(start_time: float) -> str:
+    seconds: float = time.time() - start_time
     if seconds < 1:
         return "less than one second"
-    hours = int(seconds / 60 / 60)
-    minutes = int(seconds / 60 - hours * 60)
-    seconds = int(seconds - minutes * 60 - hours * 60 * 60)
+    hours: int = int(seconds / 60 / 60)
+    minutes: int = int(seconds / 60 - hours * 60)
+    seconds: int = int(seconds - minutes * 60 - hours * 60 * 60)
     if minutes < 1 and hours < 1:
         return str(seconds) + " seconds"
     elif hours < 1:
