@@ -3,10 +3,11 @@
 # Look up elevation data for a batch of paths
 
 import logging
-import os
 import time
 
 import click
+
+from files import InputFile
 
 __author__ = "Eldan Goldenberg for A/B Street, February-March 2021"
 __license__ = "Apache"
@@ -52,11 +53,7 @@ def main(
         level=log
     )
     logging.debug("Starting run")
-    n_rows: int = 0
-    with open(os.path.join(input_dir, input_file)) as infile:
-        for row in infile:
-            n_rows += 1
-    logging.info("read %s rows", n_rows)
+    infile = InputFile(input_dir, input_file)
     logging.info("Run complete in %s.", elapsedTime(start_time))
 
 
