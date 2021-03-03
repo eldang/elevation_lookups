@@ -66,7 +66,7 @@ def elapsedTime(start_time: float) -> str:
         return "less than one second"
     hours: int = int(seconds / 60 / 60)
     minutes: int = int(seconds / 60 - hours * 60)
-    seconds: int = int(seconds - minutes * 60 - hours * 60 * 60)
+    seconds = int(seconds - minutes * 60 - hours * 60 * 60)
     if minutes < 1 and hours < 1:
         return str(seconds) + " seconds"
     elif hours < 1:
