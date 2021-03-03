@@ -10,24 +10,39 @@ from typing import Dict, List
 
 class InputFile:
 
-    def __init__(self, input_dir: str, input_file: str):
+    def __init__(self, input_dir: str, input_file: str) -> None:
         self.file_path: str = os.path.join(input_dir, input_file)
         self.n_rows: int = 0
+        self.bbox: Dict[str, float] = {}
+
         with open(self.file_path) as f:
             for row in f:
                 self.n_rows += 1
                 poly_line = PolyLine(row)
-                logging.info(poly_line.getBbox())
-        logging.info("read %s rows", self.n_rows)
+                if self.bbox == {}:
+                    self.bbox = poly_line.getBbox()
+                else:
+                    bbox: Dict[str, float] = poly_line.getBbox()
+                    if bbox['W'] < self.bbox['W']:
+                        self.bbox['W'] = bbox['W']
+                    if bbox['S'] < self.bbox['S']:
+                        self.bbox['S'] = bbox['S']
+                    if bbox['E'] > self.bbox['E']:
+                        self.bbox['E'] = bbox['E']
+                    if bbox['N'] > self.bbox['N']:
+                        self.bbox['N'] = bbox['N']
+        logging.info("Found %s rows in %s", self.n_rows, self.file_path)
+        logging.info("Area covered: %s", self.bbox)
 
 
 
 
 class PolyLine:
 
-    def __init__(self, raw_row: str):
+    def __init__(self, raw_row: str) -> None:
         self.coords: List[Dict[str, float]] = []
         self.bbox: Dict[str, float] = {}
+
         for point in raw_row.split(" "):
             vals = point.split(",")
             self.coords.append({
@@ -35,7 +50,7 @@ class PolyLine:
                 'y': float(vals[1])
             })
 
-    def getBbox(self):
+    def getBbox(self) -> Dict[str, float]:
         if self.bbox == {}:
             self.bbox = {
                 'W': self.coords[0]['x'],
