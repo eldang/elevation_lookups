@@ -17,8 +17,10 @@ class InputFile:
             for row in f:
                 self.n_rows += 1
                 poly_line = PolyLine(row)
-                logging.info(poly_line.bbox)
+                logging.info(poly_line.getBbox())
         logging.info("read %s rows", self.n_rows)
+
+
 
 
 class PolyLine:
@@ -32,18 +34,22 @@ class PolyLine:
                 'x': float(vals[0]),
                 'y': float(vals[1])
             })
-        self.bbox = {
-            'W': self.coords[0]['x'],
-            'S': self.coords[0]['y'],
-            'E': self.coords[0]['x'],
-            'N': self.coords[0]['y']
-        }
-        for coord in self.coords[1:]:
-            if coord['x'] < self.bbox['W']:
-                self.bbox['W'] = coord['x']
-            if coord['y'] < self.bbox['S']:
-                self.bbox['S'] = coord['y']
-            if coord['x'] > self.bbox['E']:
-                self.bbox['E'] = coord['x']
-            if coord['y'] > self.bbox['N']:
-                self.bbox['N'] = coord['y']
+
+    def getBbox(self):
+        if self.bbox == {}:
+            self.bbox = {
+                'W': self.coords[0]['x'],
+                'S': self.coords[0]['y'],
+                'E': self.coords[0]['x'],
+                'N': self.coords[0]['y']
+            }
+            for coord in self.coords[1:]:
+                if coord['x'] < self.bbox['W']:
+                    self.bbox['W'] = coord['x']
+                if coord['y'] < self.bbox['S']:
+                    self.bbox['S'] = coord['y']
+                if coord['x'] > self.bbox['E']:
+                    self.bbox['E'] = coord['x']
+                if coord['y'] > self.bbox['N']:
+                    self.bbox['N'] = coord['y']
+        return self.bbox
