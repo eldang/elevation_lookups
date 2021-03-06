@@ -4,9 +4,9 @@
 
 import logging
 import os
-from typing import Dict, List
+from typing import List
 
-from data import BoundingBox
+from data import BoundingBox, Coordinate
 
 
 class InputFile:
@@ -41,32 +41,29 @@ class InputFile:
 class PolyLine:
 
     def __init__(self, raw_row: str) -> None:
-        self.coords: List[Dict[str, float]] = []
+        self.coords: List[Coordinate] = []
         self.bbox = BoundingBox()
 
         for point in raw_row.split(" "):
-            vals = point.split(",")
-            self.coords.append({
-                'x': float(vals[0]),
-                'y': float(vals[1])
-            })
+            vals = [float(x) for x in point.split(",")]
+            self.coords.append(Coordinate(vals[0], vals[1]))
 
     def getBbox(self) -> BoundingBox:
         if self.bbox.empty:
             self.bbox = BoundingBox(
-                self.coords[0]['x'],
-                self.coords[0]['y'],
-                self.coords[0]['x'],
-                self.coords[0]['y']
+                self.coords[0].x,
+                self.coords[0].y,
+                self.coords[0].x,
+                self.coords[0].y
             )
 
             for coord in self.coords[1:]:
-                if coord['x'] < self.bbox.W:
-                    self.bbox.W = coord['x']
-                if coord['y'] < self.bbox.S:
-                    self.bbox.S = coord['y']
-                if coord['x'] > self.bbox.E:
-                    self.bbox.E = coord['x']
-                if coord['y'] > self.bbox.N:
-                    self.bbox.N = coord['y']
+                if coord.x < self.bbox.W:
+                    self.bbox.W = coord.x
+                if coord.y < self.bbox.S:
+                    self.bbox.S = coord.y
+                if coord.x > self.bbox.E:
+                    self.bbox.E = coord.x
+                if coord.y > self.bbox.N:
+                    self.bbox.N = coord.y
         return self.bbox
