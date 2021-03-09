@@ -54,7 +54,7 @@ def main(
     )
     logging.debug("Starting run")
     infile = InputFile(input_dir, input_file)
-    logging.info(infile.bbox)
+    logging.info(infile.paths.bounds)
     logging.info("Run complete in %s.", elapsedTime(start_time))
 
 
