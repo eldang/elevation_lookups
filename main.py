@@ -7,7 +7,7 @@ import time
 
 import click
 
-from data import DataSources
+from data import DataSource
 from files import InputFile
 
 __author__ = "Eldan Goldenberg for A/B Street, February-March 2021"
@@ -64,10 +64,8 @@ def main(
     )
     logging.debug("Starting run")
     infile = InputFile(input_dir, input_file)
-    datasources = DataSources(data_dir, data_source_list, infile.bbox())
-    if len(datasources.sources) < 1:
-        logging.critical('No applicable data sources found.')
-        exit(-1)
+    d = DataSource(data_dir, data_source_list, infile.bbox())
+    logging.info(d)
     logging.info("Run complete in %s.", elapsedTime(start_time))
 
 

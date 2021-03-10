@@ -4,28 +4,16 @@
 
 import json
 import logging
+import os
+import requests
+import time
 
-from shapely.geometry import box
-from typing import Dict, List, Tuple  # type: ignore
+from shapely.geometry import box  # type: ignore
+from typing import Tuple
+
 
 
 class DataSource:
-
-    def __init__(self, source_info: Dict) -> None:
-        logging.debug(source_info)
-        self.name: str = source_info["name"]
-        self.url: str = source_info["url"]
-        self.filename: str = source_info["filename"]
-        self.filetype: str = source_info["format"]
-        self.lookup_method: str = source_info["lookup_method"]
-        self.recheck_interval: int = source_info["recheck_interval"]
-
-    def __str__(self) -> str:
-        return self.name
-
-
-
-class DataSources:
 
     def __init__(
         self,
@@ -35,20 +23,55 @@ class DataSources:
     ) -> None:
         self.data_dir: str = data_dir
         self.sources_file: str = data_source_list
-        self.sources: List[DataSource] = []
+        source_found: bool = False
 
-        with open(self.sources_file) as f:
-            self.source_info = json.load(f)["sources"]
+        with open(self.sources_file) as infile:
+            sources = json.load(infile)["sources"]
 
-        for source in self.source_info:
+        for source in sources:
             if box(*source["bbox"]).contains(box(*bbox)):
-                self.sources.append(DataSource(source))
+                self.name: str = source["name"]
+                self.url: str = source["url"]
+                self.filename: str = os.path.join(data_dir, source["filename"])
+                self.filetype: str = source["format"]
+                self.lookup_method: str = source["lookup_method"]
+                self.recheck_interval: int = source["recheck_interval"]
+                logging.info('Using data source: %s %s', self.name, self.url)
+                source_found = True
+                break
             else:
                 logging.debug(
-                    ('Skipping data source %s because '
+                    ('Skipping data source "%s" because '
                         'it doesn`t cover the area needed.'),
                     source["name"]
                 )
 
+        if not source_found:
+            logging.critical('No applicable data sources found.')
+            exit(-1)
+
+        file_needed: bool = False
+        if not os.path.exists(self.filename):
+            file_needed = True
+            logging.info('Downloading data from %s', self.url)
+        else:
+            timestamp = os.stat(self.filename).st_mtime
+            if time.time() - timestamp > self.recheck_interval * 60 * 60 * 24:
+                file_needed = True
+                logging.info(
+                    'Replacing %s from %s because it`s > than %s days old',
+                    self.filename,
+                    self.url,
+                    self.recheck_interval
+                )
+
+        if file_needed:
+            req = requests.get(self.url)
+            with open(self.filename, 'wb') as outfile:
+                outfile.write(req.content)
+        else:
+            logging.info('Data file already saved at %s', self.filename)
+
+
     def __str__(self) -> str:
-        return str([str(x) for x in self.sources])
+        return self.name
