@@ -7,6 +7,7 @@ import time
 
 import click
 
+from data import DataSource
 from files import InputFile
 
 __author__ = "Eldan Goldenberg for A/B Street, February-March 2021"
@@ -30,19 +31,28 @@ __license__ = "Apache"
     help='Specify an output directory or leave out for default value: "output"'
 )
 @click.option(
+    '--data_source_list',
+    default='datasources.json',
+    help=('Path to a JSON file enumerating available data sources, '
+            'or leave out for default value: "datasources.json"')
+)
+@click.option(
     '--log',
     type=click.Choice(
         ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         case_sensitive=False
     ),
     default='INFO',
-    help='Logging level.  Only messages of the selected severity or higher will be emitted.  Default: INFO'  # noqa: E501
+    help=('Logging level.  '
+            'Only messages of the selected severity or higher will be emitted.'
+            'Default: INFO')
 )
 @click.argument('input_file')
 def main(
     input_dir: str,
     data_dir: str,
     output_dir: str,
+    data_source_list: str,
     input_file: str,
     log: str
 ) -> None:
@@ -54,7 +64,8 @@ def main(
     )
     logging.debug("Starting run")
     infile = InputFile(input_dir, input_file)
-    logging.info(infile.bbox)
+    d = DataSource(data_dir, data_source_list, infile.bbox())
+    logging.info(d)
     logging.info("Run complete in %s.", elapsedTime(start_time))
 
 

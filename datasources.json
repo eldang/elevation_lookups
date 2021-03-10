@@ -1,0 +1,13 @@
+{
+	"sources": [
+		{
+			"name": "Seattle 2ft contours",
+			"url": "https://opendata.arcgis.com/datasets/1545ab0b0fcc492886be92be25a9faa5_0.geojson",
+			"filename": "seattle_contours.geojson",
+			"format": "geojson",
+			"bbox": [-122.4359526776817120,47.4448428851168060, -122.2173553791662357,47.7779711955390596],
+			"lookup_method": "contour_lines",
+			"recheck_interval_days": 1
+		}
+	]
+}

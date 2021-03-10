@@ -4,67 +4,32 @@
 
 import logging
 import os
-from typing import Dict, List
-
+from shapely.geometry import LineString, MultiLineString  # type: ignore
+from typing import List, Tuple
 
 
 class InputFile:
 
     def __init__(self, input_dir: str, input_file: str) -> None:
         self.file_path: str = os.path.join(input_dir, input_file)
-        self.n_rows: int = 0
-        self.bbox: Dict[str, float] = {}
 
+        lines: List[LineString] = []
         with open(self.file_path) as f:
             for row in f:
-                self.n_rows += 1
-                poly_line = PolyLine(row)
-                if self.bbox == {}:
-                    self.bbox = poly_line.getBbox()
-                else:
-                    bbox: Dict[str, float] = poly_line.getBbox()
-                    if bbox['W'] < self.bbox['W']:
-                        self.bbox['W'] = bbox['W']
-                    if bbox['S'] < self.bbox['S']:
-                        self.bbox['S'] = bbox['S']
-                    if bbox['E'] > self.bbox['E']:
-                        self.bbox['E'] = bbox['E']
-                    if bbox['N'] > self.bbox['N']:
-                        self.bbox['N'] = bbox['N']
-        logging.info("Found %s rows in %s", self.n_rows, self.file_path)
-        logging.info("Area covered: %s", self.bbox)
+                lines.append(self.__buildLine__(row))
+        self.__paths = MultiLineString(lines)
+        logging.info("Found %s rows in %s", self.n_lines(), self.file_path)
+        logging.info("Area covered: %s", self.bbox())
 
+    def __buildLine__(self, raw_line) -> LineString:
+        coords: List[Tuple[float, float]] = []
+        for point in raw_line.split(" "):
+            vals = [float(x) for x in point.split(",")]
+            coords.append((vals[0], vals[1]))
+        return LineString(coords)
 
+    def bbox(self) -> Tuple[float, float, float, float]:
+        return self.__paths.bounds
 
-
-class PolyLine:
-
-    def __init__(self, raw_row: str) -> None:
-        self.coords: List[Dict[str, float]] = []
-        self.bbox: Dict[str, float] = {}
-
-        for point in raw_row.split(" "):
-            vals = point.split(",")
-            self.coords.append({
-                'x': float(vals[0]),
-                'y': float(vals[1])
-            })
-
-    def getBbox(self) -> Dict[str, float]:
-        if self.bbox == {}:
-            self.bbox = {
-                'W': self.coords[0]['x'],
-                'S': self.coords[0]['y'],
-                'E': self.coords[0]['x'],
-                'N': self.coords[0]['y']
-            }
-            for coord in self.coords[1:]:
-                if coord['x'] < self.bbox['W']:
-                    self.bbox['W'] = coord['x']
-                if coord['y'] < self.bbox['S']:
-                    self.bbox['S'] = coord['y']
-                if coord['x'] > self.bbox['E']:
-                    self.bbox['E'] = coord['x']
-                if coord['y'] > self.bbox['N']:
-                    self.bbox['N'] = coord['y']
-        return self.bbox
+    def n_lines(self) -> int:
+        return len(self.__paths.geoms)
