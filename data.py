@@ -35,7 +35,7 @@ class DataSource:
                 self.filename: str = os.path.join(data_dir, source["filename"])
                 self.filetype: str = source["format"]
                 self.lookup_method: str = source["lookup_method"]
-                self.recheck_interval: int = source["recheck_interval"]
+                self.recheck_interval_days: int = source["recheck_interval_days"]  # noqa: E501
                 logging.info('Using data source: %s %s', self.name, self.url)
                 source_found = True
                 break
@@ -55,14 +55,14 @@ class DataSource:
             file_needed = True
             logging.info('Downloading data from %s', self.url)
         else:
-            timestamp: float = os.stat(self.filename).st_mtime
-            if time.time() - timestamp > self.recheck_interval * 60 * 60 * 24:
+            age: float = time.time() - os.stat(self.filename).st_mtime
+            if age > self.recheck_interval_days * 60 * 60 * 24:
                 file_needed = True
                 logging.info(
                     'Replacing %s from %s because it`s > than %s days old',
                     self.filename,
                     self.url,
-                    self.recheck_interval
+                    self.recheck_interval_days
                 )
 
         if file_needed:
