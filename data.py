@@ -55,7 +55,7 @@ class DataSource:
             file_needed = True
             logging.info('Downloading data from %s', self.url)
         else:
-            timestamp = os.stat(self.filename).st_mtime
+            timestamp: float = os.stat(self.filename).st_mtime
             if time.time() - timestamp > self.recheck_interval * 60 * 60 * 24:
                 file_needed = True
                 logging.info(
