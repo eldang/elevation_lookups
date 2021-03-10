@@ -4,7 +4,7 @@
 
 import logging
 import os
-from shapely.geometry import LineString, MultiLineString # type: ignore
+from shapely.geometry import LineString, MultiLineString  # type: ignore
 from typing import List, Tuple
 
 
