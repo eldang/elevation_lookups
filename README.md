@@ -39,3 +39,17 @@ Program / data structure:
 	* input_file(): reads input files, reports stats back about them, and allows iteration through them
 	* output_file(): opens output files and writes to them
 * data.py: manages data sources
+
+## Dependencies
+
+This utility is being developed and tested in Python 3.6.8 on a Mac.  In addition to the Python modules listed in [requirements.txt](requirements.txt) it requires the following installed on the environment it will be run in:
+
+* [GDAL](https://www.gdal.org/), tested with version 3.2.1
+* [GEOS](https://trac.osgeo.org/geos), tested with version 3.9.1
+* [PROJ](https://proj.org/), tested with version 7.2.1
+
+In addition, I recommend installing the Python dependencies with:
+
+`pip3 install -r requirements.txt --no-binary pygeos --no-binary shapely`
+
+to make sure that they are built with the exact versions of the above dependencies as are present in the environment.
