@@ -26,12 +26,15 @@ class DataSource:
         self.data_dir: str = data_dir
         self.sources_file: str = data_source_list
 
-        self.choose_source(bbox)
-        self.download_file()
-        self.read_file(bbox)
+        self.__choose_source__(bbox)
+        self.__download_file__()
+        self.__read_file__(bbox)
 
 
-    def choose_source(self, bbox: Tuple[float, float, float, float]) -> None:
+    def __choose_source__(
+        self,
+        bbox: Tuple[float, float, float, float]
+    ) -> None:
         # load available sources from metadata JSON
         with open(self.sources_file) as infile:
             sources = json.load(infile)["sources"]
@@ -65,7 +68,7 @@ class DataSource:
             exit(1)
 
 
-    def download_file(self) -> None:
+    def __download_file__(self) -> None:
         # create or replace local file if appropriate
         file_needed: bool = False
         if not os.path.exists(self.filename):
@@ -89,7 +92,7 @@ class DataSource:
             logging.info('Data file already saved at %s', self.filename)
 
 
-    def read_file(self, bbox: Tuple[float, float, float, float]) -> None:
+    def __read_file__(self, bbox: Tuple[float, float, float, float]) -> None:
         # load this file to memory
         logging.info('Loading %s', self.filename)
         gdf = gp.read_file(self.filename)

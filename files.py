@@ -16,12 +16,12 @@ class InputFile:
         lines: List[LineString] = []
         with open(self.file_path) as f:
             for row in f:
-                lines.append(self.__buildLine__(row))
+                lines.append(self.__build_line__(row))
         self.__paths = MultiLineString(lines)
         logging.info("Found %s rows in %s", self.n_lines(), self.file_path)
         logging.info("Area covered: %s", self.bbox())
 
-    def __buildLine__(self, raw_line) -> LineString:
+    def __build_line__(self, raw_line) -> LineString:
         coords: List[Tuple[float, float]] = []
         for point in raw_line.split(" "):
             vals = [float(x) for x in point.split(",")]
