@@ -109,11 +109,10 @@ class DataSource:
 
 
     def __str__(self) -> str:
-        return str([
-            self.name,
-            self.filename,
-            self.filetype,
-            self.lookup_method,
-            self.source_crs,
-            self.source_units
-        ])
+        return "DataSource " + str({
+            "name": self.name,
+            "local file": self.filename,
+            "type": self.lookup_method,
+            "CRS": self.source_crs,
+            "elevation units": self.source_units
+        })
