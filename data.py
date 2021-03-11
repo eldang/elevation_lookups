@@ -5,13 +5,13 @@
 import json
 import logging
 import os
-import pyproj
-import requests
 import time
 
-from shapely.geometry import box, LineString  # type: ignore
-from shapely.ops import transform  # type: ignore
-from typing import Any, List, Tuple
+import geopandas as gp  # type: ignore
+import requests
+
+from shapely.geometry import box  # type: ignore
+from typing import List, Tuple
 
 
 
@@ -91,41 +91,21 @@ class DataSource:
 
     def read_file(self, bbox: Tuple[float, float, float, float]) -> None:
         # load this file to memory
-        logging.info('Reading %s as %s', self.filename, self.filetype)
-        raw_features: List[Tuple[List[float], float]]  # [([[x,y]], elevation)]
-        if self.filetype == "geojson":
-            with open(self.filename) as infile:
-                raw_features = [
-                    (
-                        x["geometry"]["coordinates"],
-                        x["properties"][self.lookup_field]
-                    ) for x in json.load(infile)["features"]
-                ]
-        else:
-            logging.critical('File type %s not supported', self.filetype)
-            exit(1)
-        logging.info('Parsing %s as %s', self.filename, self.lookup_method)
-        reprojector = pyproj.Transformer.from_crs(
-            pyproj.CRS(self.source_crs),
-            pyproj.CRS('EPSG:4326'),
-            always_xy=True
-        ).transform
-        self.features: List[Tuple[Any, float]] = []  # [(shape, elevation)]
-        if self.lookup_method == "contour_lines":
-            for feature in raw_features:
-                line = LineString(feature[0])
-                if line.intersects(box(*bbox)):
-                    if self.source_crs == 'EPSG:4326':
-                        self.features.append((line, feature[1]))
-                    else:
-                        self.features.append(
-                            (transform(reprojector, line), feature[1])
-                        )
-        else:
-            logging.critical(
-                'Lookup method %s not supported', self.lookup_method
-            )
-            exit(1)
+        logging.info('Loading %s', self.filename)
+        gdf = gp.read_file(self.filename)
+        # limit to just the columns we need
+        surplus_columns: List[str] = gdf.columns.tolist()
+        surplus_columns.remove("geometry")
+        surplus_columns.remove(self.lookup_field)
+        gdf.drop(surplus_columns, axis=1, inplace=True)
+        gdf.rename(columns={self.lookup_field: "elevation"}, inplace=True)
+        # reproject if necessary
+        if self.source_crs != 'EPSG:4326':
+            logging.info('Reprojecting from %s to EPSG:4326', self.source_crs)
+            gdf.to_crs(4326)
+        # crop to bbox
+        self.gdf = gp.clip(gdf, box(*bbox), keep_geom_type=True)
+        print(self.gdf.head())
 
 
     def __str__(self) -> str:
