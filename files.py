@@ -4,7 +4,7 @@
 
 import logging
 import os
-from shapely.geometry import LineString, MultiLineString  # type: ignore
+from shapely.geometry import box, LineString, MultiLineString  # type: ignore
 from typing import List, Tuple
 
 
@@ -28,8 +28,8 @@ class InputFile:
             coords.append((vals[0], vals[1]))
         return LineString(coords)
 
-    def bbox(self) -> Tuple[float, float, float, float]:
-        return self.__paths.bounds
+    def bbox(self) -> box:
+        return box(*self.__paths.bounds)
 
     def n_lines(self) -> int:
         return len(self.__paths.geoms)

@@ -11,7 +11,7 @@ import geopandas as gp  # type: ignore
 import requests
 
 from shapely.geometry import box  # type: ignore
-from typing import List, Tuple
+from typing import List
 
 
 
@@ -21,7 +21,7 @@ class DataSource:
         self,
         data_dir: str,
         data_source_list: str,
-        bbox: Tuple[float, float, float, float]
+        bbox: box
     ) -> None:
         self.data_dir: str = data_dir
         self.sources_file: str = data_source_list
@@ -31,10 +31,7 @@ class DataSource:
         self.__read_file__(bbox)
 
 
-    def __choose_source__(
-        self,
-        bbox: Tuple[float, float, float, float]
-    ) -> None:
+    def __choose_source__(self, bbox: box) -> None:
         # load available sources from metadata JSON
         with open(self.sources_file) as infile:
             sources = json.load(infile)["sources"]
@@ -42,7 +39,7 @@ class DataSource:
         # try to find an applicable source; quit if none found
         source_found: bool = False
         for source in sources:
-            if box(*source["bbox"]).contains(box(*bbox)):
+            if box(*source["bbox"]).contains(bbox):
                 self.name: str = source["name"]
                 self.url: str = source["url"]
                 self.filename: str = os.path.join(
@@ -92,7 +89,7 @@ class DataSource:
             logging.info('Data file already saved at %s', self.filename)
 
 
-    def __read_file__(self, bbox: Tuple[float, float, float, float]) -> None:
+    def __read_file__(self, bbox: box) -> None:
         # load this file to memory
         logging.info('Loading %s', self.filename)
         gdf = gp.read_file(self.filename)
@@ -107,7 +104,7 @@ class DataSource:
             logging.info('Reprojecting from %s to EPSG:4326', self.source_crs)
             gdf.to_crs(4326)
         # crop to bbox
-        self.gdf = gp.clip(gdf, box(*bbox), keep_geom_type=True)
+        self.gdf = gp.clip(gdf, bbox, keep_geom_type=True)
         print(self.gdf.head())
 
 
