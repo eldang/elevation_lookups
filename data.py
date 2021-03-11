@@ -26,6 +26,12 @@ class DataSource:
         self.data_dir: str = data_dir
         self.sources_file: str = data_source_list
 
+        self.choose_source(bbox)
+        self.download_file()
+        self.read_file(bbox)
+
+
+    def choose_source(self, bbox: Tuple[float, float, float, float]) -> None:
         # load available sources from metadata JSON
         with open(self.sources_file) as infile:
             sources = json.load(infile)["sources"]
@@ -36,7 +42,9 @@ class DataSource:
             if box(*source["bbox"]).contains(box(*bbox)):
                 self.name: str = source["name"]
                 self.url: str = source["url"]
-                self.filename: str = os.path.join(data_dir, source["filename"])
+                self.filename: str = os.path.join(
+                    self.data_dir, source["filename"]
+                )
                 self.filetype: str = source["format"]
                 self.source_crs: str = source["crs"]
                 self.lookup_method: str = source["lookup_method"]
@@ -56,6 +64,8 @@ class DataSource:
             logging.critical('No applicable data sources found.')
             exit(1)
 
+
+    def download_file(self) -> None:
         # create or replace local file if appropriate
         file_needed: bool = False
         if not os.path.exists(self.filename):
@@ -78,7 +88,9 @@ class DataSource:
         else:
             logging.info('Data file already saved at %s', self.filename)
 
-        # load this file to the class
+
+    def read_file(self, bbox: Tuple[float, float, float, float]) -> None:
+        # load this file to memory
         logging.info('Reading %s as %s', self.filename, self.filetype)
         raw_features: List[Tuple[List[float], float]]  # [([[x,y]], elevation)]
         if self.filetype == "geojson":
@@ -92,7 +104,6 @@ class DataSource:
         else:
             logging.critical('File type %s not supported', self.filetype)
             exit(1)
-        print(len(raw_features))
         logging.info('Parsing %s as %s', self.filename, self.lookup_method)
         reprojector = pyproj.Transformer.from_crs(
             pyproj.CRS(self.source_crs),
@@ -115,7 +126,6 @@ class DataSource:
                 'Lookup method %s not supported', self.lookup_method
             )
             exit(1)
-        print(len(self.features))
 
 
     def __str__(self) -> str:
