@@ -33,3 +33,22 @@ class InputFile:
 
     def n_lines(self) -> int:
         return len(self.__paths.geoms)
+
+
+class OutputFile:
+
+    def __init__(self, output_dir: str, output_file: str) -> None:
+        self.file_path: str = os.path.join(output_dir, output_file)
+
+        if os.path.exists(self.file_path):
+            logging.info("Overwriting existing %s", self.file_path)
+        else:
+            logging.info("Creating output file %s", self.file_path)
+
+        self.f = open(self.file_path, 'w')
+
+    def close(self) -> None:
+        self.f.close()
+
+    def __str__(self) -> str:
+        return self.file_path

@@ -8,7 +8,7 @@ import time
 import click
 
 from data import DataSource
-from files import InputFile
+from files import InputFile, OutputFile
 
 __author__ = "Eldan Goldenberg for A/B Street, February-March 2021"
 __license__ = "Apache"
@@ -65,7 +65,10 @@ def main(
     logging.debug("Starting run")
     infile = InputFile(input_dir, input_file)
     d = DataSource(data_dir, data_source_list, infile.bbox())
+    outfile = OutputFile(output_dir, input_file)  # same filename as input
     logging.info(d)
+    logging.info(outfile)
+    outfile.close()
     logging.info("Run complete in %s.", elapsedTime(start_time))
 
 
