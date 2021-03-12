@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import time
+import warnings
 
 import geopandas as gp  # type: ignore
 import requests
@@ -27,7 +28,7 @@ class ElevationStats:
         self.descent: float = -1
 
     def __str__(self) -> str:
-        return "\t".join([
+        return " \t".join([
             'Starting elevation: ' +
             str(round(self.start, SCREEN_PRECISION)),
             'Ending elevation: ' +
@@ -139,13 +140,14 @@ class DataSource:
                     "using unconverted values"),
                 self.source_units
             )
+        logging.info("Creating spatial index")
+        self.idx = self.gdf.sindex
 
 
     def process(self, line: LineString) -> ElevationStats:
         stats = ElevationStats()
         stats.start = self.point_elevation(Point(line.coords[0]))
         stats.end = self.point_elevation(Point(line.coords[-1]))
-        print(stats)
         return stats
 
 
@@ -161,17 +163,28 @@ class DataSource:
 
 
     def nearest_contour(self, point: Point) -> float:
-        clipped = gp.GeoDataFrame
-        padding = 0.00001
-        while clipped.empty or len(clipped.index) > 2:
-            clipped = gp.clip(
-                self.gdf, point.buffer(padding), keep_geom_type=True
+        # if our point happens to be on a contour, just run with that one
+        subset = self.idx.query(point, predicate="touches")
+        # if not, then check for intersections with progressively larger
+        # buffers until we find at least one contour
+        padding: float = 0.00001
+        i: int = 0
+        while len(subset) < 1:
+            i += 1
+            subset = self.idx.query(
+                point.buffer(padding * i), predicate="intersects"
             )
-            if clipped.empty:
-                padding = padding * 5
-            else:
-                padding = padding / 4
-        return clipped["elevation"].mean()
+        # if we have exactly one result, it must be the nearest
+        if len(subset) == 1:
+            return self.gdf.elevation.iloc[subset[0]]
+        # otherwise calculate distances among the subset returned by .query
+        with warnings.catch_warnings():
+            # suppressing the geopandas UserWarning about distances from a
+            # projected CRS, because we only care about _relative_ distance
+            warnings.simplefilter(action='ignore', category=UserWarning)
+            distances = self.gdf.iloc[subset].distance(point)
+        # and return the elevation of the closest contour
+        return self.gdf.loc[distances.idxmin()]["elevation"]
 
 
     def __str__(self) -> str:

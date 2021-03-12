@@ -56,7 +56,7 @@ class InputFile:
                 lines.append(self.__build_line__(row))
         self.__paths = MultiLineString(lines)
         logging.info("Found %s rows in %s", self.n_lines(), self.file_path)
-        logging.info("Area covered: %s", self.bbox())
+        logging.info("Area covered: %s", self.__paths.bounds)
 
     def __build_line__(self, raw_line) -> LineString:
         coords: List[Tuple[float, float]] = []
