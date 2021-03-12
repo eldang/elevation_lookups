@@ -59,16 +59,17 @@ def main(
     start_time: float = time.time()
     logging.basicConfig(
         format='%(asctime)s %(levelname)s:\t%(message)s',
-        datefmt='%Y%m%d %H:%M',
-        level=log
+        datefmt='%Y%m%d %H:%M'
     )
-    logging.debug("Starting run")
-    infile = InputFile(input_dir, input_file)
-    d = DataSource(data_dir, data_source_list, infile.bbox())
-    outfile = OutputFile(output_dir, input_file)  # same filename as input
+    logger = logging.getLogger(__name__)
+    logger.setLevel(level=log)
+    logger.debug("Starting run")
+    infile = InputFile(__name__, input_dir, input_file)
+    d = DataSource(__name__, data_dir, data_source_list, infile.bbox())
+    outfile = OutputFile(__name__, output_dir, input_file)
     infile.process(d, outfile)
     outfile.close()
-    logging.info("Run complete in %s.", elapsedTime(start_time))
+    logger.info("Run complete in %s.", elapsedTime(start_time))
 
 
 

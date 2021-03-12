@@ -44,10 +44,12 @@ class DataSource:
 
     def __init__(
         self,
+        logger_name: str,
         data_dir: str,
         data_source_list: str,
         bbox: box
     ) -> None:
+        self.logger = logging.getLogger(logger_name)
         self.data_dir: str = data_dir
         self.sources_file: str = data_source_list
 
@@ -76,17 +78,21 @@ class DataSource:
                 self.lookup_field: str = source["lookup_field"]
                 self.source_units: str = source["units"]
                 self.recheck_days: int = source["recheck_interval_days"]
-                logging.info('Using data source: %s %s', self.name, self.url)
+                self.logger.info(
+                    'Using data source: %s %s',
+                    self.name,
+                    self.url
+                )
                 source_found = True
                 break
             else:
-                logging.debug(
+                self.logger.debug(
                     ('Skipping data source "%s" because '
                         'it doesn`t cover the area needed.'),
                     source["name"]
                 )
         if not source_found:
-            logging.critical('No applicable data sources found.')
+            self.logger.critical('No applicable data sources found.')
             exit(1)
 
 
@@ -95,12 +101,12 @@ class DataSource:
         file_needed: bool = False
         if not os.path.exists(self.filename):
             file_needed = True
-            logging.info('Downloading data from %s', self.url)
+            self.logger.info('Downloading data from %s', self.url)
         else:
             age: float = time.time() - os.stat(self.filename).st_mtime
             if age > self.recheck_days * 60 * 60 * 24:
                 file_needed = True
-                logging.info(
+                self.logger.info(
                     'Replacing %s from %s because it`s > than %s days old',
                     self.filename,
                     self.url,
@@ -111,12 +117,12 @@ class DataSource:
             with open(self.filename, 'wb') as outfile:
                 outfile.write(req.content)
         else:
-            logging.info('Data file already saved at %s', self.filename)
+            self.logger.info('Data file already saved at %s', self.filename)
 
 
     def __read_file__(self, bbox: box) -> None:
         # load this file to memory
-        logging.info('Loading %s', self.filename)
+        self.logger.info('Loading %s', self.filename)
         gdf = gp.read_file(self.filename)
         # limit to just the columns we need
         surplus_columns: List[str] = gdf.columns.tolist()
@@ -126,21 +132,26 @@ class DataSource:
         gdf.rename(columns={self.lookup_field: "elevation"}, inplace=True)
         # reproject if necessary
         if self.source_crs != 'EPSG:4326':
-            logging.info('Reprojecting from %s to EPSG:4326', self.source_crs)
+            self.logger.info(
+                'Reprojecting from %s to EPSG:4326',
+                self.source_crs
+            )
             gdf.to_crs(4326)
         # crop to bbox
         self.gdf = gp.clip(gdf, bbox, keep_geom_type=True)
         # convert units if necessary
         if self.source_units in ["feet", "foot", "ft"]:
-            logging.info("Converting source elevations from feet to metres")
+            self.logger.info(
+                "Converting source elevations from feet to metres"
+            )
             self.gdf["elevation"] = self.gdf["elevation"] * FOOT_IN_M
         elif self.source_units not in ["meters", "metres", "m"]:
-            logging.warning(
+            self.logger.warning(
                 ("Data source unit of '%s' not recognised; "
                     "using unconverted values"),
                 self.source_units
             )
-        logging.info("Creating spatial index")
+        self.logger.info("Creating spatial index")
         self.idx = self.gdf.sindex
 
 
@@ -155,7 +166,7 @@ class DataSource:
         if self.lookup_method == "contour_lines":
             return self.nearest_contour(point)
         else:
-            logging.critical(
+            self.logger.critical(
                 "Lookup method %s is not defined",
                 self.lookup_method
             )

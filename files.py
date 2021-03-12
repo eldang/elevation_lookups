@@ -17,13 +17,19 @@ SAVE_PRECISION: int = 3  # round values to mm in the saved output
 
 class OutputFile:
 
-    def __init__(self, output_dir: str, output_file: str) -> None:
+    def __init__(
+        self,
+        logger_name: str,
+        output_dir: str,
+        output_file: str
+    ) -> None:
+        self.logger = logging.getLogger(logger_name)
         self.file_path: str = os.path.join(output_dir, output_file)
 
         if os.path.exists(self.file_path):
-            logging.info("Overwriting existing %s", self.file_path)
+            self.logger.info("Overwriting existing %s", self.file_path)
         else:
-            logging.info("Creating output file %s", self.file_path)
+            self.logger.info("Creating output file %s", self.file_path)
 
         self.f = open(self.file_path, 'w')
 
@@ -47,7 +53,13 @@ class OutputFile:
 
 class InputFile:
 
-    def __init__(self, input_dir: str, input_file: str) -> None:
+    def __init__(
+        self,
+        logger_name: str,
+        input_dir: str,
+        input_file: str
+    ) -> None:
+        self.logger = logging.getLogger(logger_name)
         self.file_path: str = os.path.join(input_dir, input_file)
 
         lines: List[LineString] = []
@@ -55,8 +67,8 @@ class InputFile:
             for row in f:
                 lines.append(self.__build_line__(row))
         self.__paths = MultiLineString(lines)
-        logging.info("Found %s rows in %s", self.n_lines(), self.file_path)
-        logging.info("Area covered: %s", self.__paths.bounds)
+        self.logger.info("Found %s rows in %s", self.n_lines(), self.file_path)
+        self.logger.info("Area covered: %s", self.__paths.bounds)
 
     def __build_line__(self, raw_line) -> LineString:
         coords: List[Tuple[float, float]] = []
