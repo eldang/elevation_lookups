@@ -66,8 +66,7 @@ def main(
     infile = InputFile(input_dir, input_file)
     d = DataSource(data_dir, data_source_list, infile.bbox())
     outfile = OutputFile(output_dir, input_file)  # same filename as input
-    logging.info(d)
-    logging.info(outfile)
+    infile.process(d, outfile)
     outfile.close()
     logging.info("Run complete in %s.", elapsedTime(start_time))
 

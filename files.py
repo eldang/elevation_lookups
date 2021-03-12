@@ -4,8 +4,42 @@
 
 import logging
 import os
-from shapely.geometry import box, LineString, MultiLineString  # type: ignore
 from typing import List, Tuple
+
+from shapely.geometry import box, LineString, MultiLineString  # type: ignore
+
+from data import DataSource, ElevationStats
+
+
+
+class OutputFile:
+
+    def __init__(self, output_dir: str, output_file: str) -> None:
+        self.file_path: str = os.path.join(output_dir, output_file)
+
+        if os.path.exists(self.file_path):
+            logging.info("Overwriting existing %s", self.file_path)
+        else:
+            logging.info("Creating output file %s", self.file_path)
+
+        self.f = open(self.file_path, 'w')
+
+    def write_elevations(self, data: ElevationStats) -> None:
+        self.f.write(str(data.start))
+        self.f.write(' ')
+        self.f.write(str(data.end))
+        self.f.write(' ')
+        self.f.write(str(data.climb))
+        self.f.write(' ')
+        self.f.write(str(data.descent))
+        self.f.write('\n')
+
+    def close(self) -> None:
+        self.f.close()
+
+    def __str__(self) -> str:
+        return self.file_path
+
 
 
 class InputFile:
@@ -28,27 +62,13 @@ class InputFile:
             coords.append((vals[0], vals[1]))
         return LineString(coords)
 
+    def process(self, d: DataSource, outfile: OutputFile) -> None:
+        for line in self.__paths:
+            vals: ElevationStats = d.process(line)
+            outfile.write_elevations(vals)
+
     def bbox(self) -> box:
         return box(*self.__paths.bounds)
 
     def n_lines(self) -> int:
         return len(self.__paths.geoms)
-
-
-class OutputFile:
-
-    def __init__(self, output_dir: str, output_file: str) -> None:
-        self.file_path: str = os.path.join(output_dir, output_file)
-
-        if os.path.exists(self.file_path):
-            logging.info("Overwriting existing %s", self.file_path)
-        else:
-            logging.info("Creating output file %s", self.file_path)
-
-        self.f = open(self.file_path, 'w')
-
-    def close(self) -> None:
-        self.f.close()
-
-    def __str__(self) -> str:
-        return self.file_path

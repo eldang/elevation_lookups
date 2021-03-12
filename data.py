@@ -10,9 +10,26 @@ import time
 import geopandas as gp  # type: ignore
 import requests
 
-from shapely.geometry import box  # type: ignore
+from shapely.geometry import box, LineString, Point  # type: ignore
 from typing import List
 
+
+
+class ElevationStats:
+
+    def __init__(self) -> None:
+        self.start: float = -1
+        self.end: float = -1
+        self.climb: float = -1
+        self.descent: float = -1
+
+    def __str__(self) -> str:
+        return ", ".join([
+            "Starting elevation: " + str(self.start),
+            "Ending elevation: " + str(self.end),
+            "Total climb: " + str(self.climb),
+            "Total descent: " + str(self.descent)
+        ])
 
 
 class DataSource:
@@ -105,7 +122,49 @@ class DataSource:
             gdf.to_crs(4326)
         # crop to bbox
         self.gdf = gp.clip(gdf, bbox, keep_geom_type=True)
-        print(self.gdf.head())
+        # convert units if necessary
+        if self.source_units in ["feet", "foot", "ft"]:
+            logging.info("Converting source elevations from feet to metres")
+            self.gdf["elevation"] = self.gdf["elevation"] * 0.3048
+        elif self.source_units not in ["meters", "metres", "m"]:
+            logging.warning(
+                ("Data source unit of '%s' not recognised; "
+                    "using unconverted values"),
+                self.source_units
+            )
+
+
+    def process(self, line: LineString) -> ElevationStats:
+        stats = ElevationStats()
+        stats.start = self.point_elevation(Point(line.coords[0]))
+        stats.end = self.point_elevation(Point(line.coords[-1]))
+        print(stats)
+        return stats
+
+
+    def point_elevation(self, point: Point) -> float:
+        if self.lookup_method == "contour_lines":
+            return self.nearest_contour(point)
+        else:
+            logging.critical(
+                "Lookup method %s is not defined",
+                self.lookup_method
+            )
+            exit(1)
+
+
+    def nearest_contour(self, point: Point) -> float:
+        clipped = gp.GeoDataFrame
+        padding = 0.00001
+        while clipped.empty or len(clipped.index) > 2:
+            clipped = gp.clip(
+                self.gdf, point.buffer(padding), keep_geom_type=True
+            )
+            if clipped.empty:
+                padding = padding * 5
+            else:
+                padding = padding / 4
+        return clipped["elevation"].mean()
 
 
     def __str__(self) -> str:
