@@ -14,6 +14,9 @@ from shapely.geometry import box, LineString, Point  # type: ignore
 from typing import List
 
 
+SCREEN_PRECISION: int = 2  # round terminal output to 1cm
+FOOT_IN_M: float = 0.3048
+
 
 class ElevationStats:
 
@@ -24,11 +27,15 @@ class ElevationStats:
         self.descent: float = -1
 
     def __str__(self) -> str:
-        return ", ".join([
-            "Starting elevation: " + str(self.start),
-            "Ending elevation: " + str(self.end),
-            "Total climb: " + str(self.climb),
-            "Total descent: " + str(self.descent)
+        return "\t".join([
+            'Starting elevation: ' +
+            str(round(self.start, SCREEN_PRECISION)),
+            'Ending elevation: ' +
+            str(round(self.end, SCREEN_PRECISION)),
+            'Total climb: ' +
+            str(round(self.climb, SCREEN_PRECISION)),
+            'Total descent: ' +
+            str(round(self.descent, SCREEN_PRECISION))
         ])
 
 
@@ -125,7 +132,7 @@ class DataSource:
         # convert units if necessary
         if self.source_units in ["feet", "foot", "ft"]:
             logging.info("Converting source elevations from feet to metres")
-            self.gdf["elevation"] = self.gdf["elevation"] * 0.3048
+            self.gdf["elevation"] = self.gdf["elevation"] * FOOT_IN_M
         elif self.source_units not in ["meters", "metres", "m"]:
             logging.warning(
                 ("Data source unit of '%s' not recognised; "

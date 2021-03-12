@@ -12,6 +12,9 @@ from data import DataSource, ElevationStats
 
 
 
+SAVE_PRECISION: int = 3  # round values to mm in the saved output
+
+
 class OutputFile:
 
     def __init__(self, output_dir: str, output_file: str) -> None:
@@ -25,13 +28,13 @@ class OutputFile:
         self.f = open(self.file_path, 'w')
 
     def write_elevations(self, data: ElevationStats) -> None:
-        self.f.write(str(data.start))
-        self.f.write(' ')
-        self.f.write(str(data.end))
-        self.f.write(' ')
-        self.f.write(str(data.climb))
-        self.f.write(' ')
-        self.f.write(str(data.descent))
+        self.f.write(str(round(data.start, SAVE_PRECISION)))
+        self.f.write('\t')
+        self.f.write(str(round(data.end, SAVE_PRECISION)))
+        self.f.write('\t')
+        self.f.write(str(round(data.climb, SAVE_PRECISION)))
+        self.f.write('\t')
+        self.f.write(str(round(data.descent, SAVE_PRECISION)))
         self.f.write('\n')
 
     def close(self) -> None:
