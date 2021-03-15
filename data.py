@@ -164,7 +164,7 @@ class DataSource:
 
     def point_elevation(self, point: Point) -> float:
         if self.lookup_method == "contour_lines":
-            return self.nearest_contour(point)
+            return self.__nearest_contour__(point)
         else:
             self.logger.critical(
                 "Lookup method %s is not defined",
@@ -173,7 +173,7 @@ class DataSource:
             exit(1)
 
 
-    def nearest_contour(self, point: Point) -> float:
+    def __nearest_contour__(self, point: Point) -> float:
         # if our point happens to be on a contour, just run with that one
         subset = self.idx.query(point, predicate="touches")
         # if not, then check for intersections with progressively larger
