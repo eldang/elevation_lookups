@@ -245,38 +245,25 @@ class DataSource:
         # initialise what will be running totals
         stats.climb = 0
         stats.descent = 0
-        # get all the contours that could be closest to any point in the line
-        subset: List[int] = self.__contour_line_subset__(line)
-        # if we only have one, then we know the line doesn't climb or descend
-        if len(subset) == 1:
-            stats.start = self.gdf.elevation.iloc[subset[0]]
+        # otherwise find the elevation of the first point
+        stats.start = self.__nearest_contour__(Point(line.coords[0]))
+        # if we only have one point then we're set
+        if (len(line.coords) == 1) or (
+            (len(line.coords) == 2) and (line.coords[0] == line.coords[-1])
+        ):
             stats.end = stats.start
+        # otherwise find all the contour crossings to get the total
         else:
-            # otherwise find the elevation of the first point
-            stats.start = self.__nearest_contour__(
-                Point(line.coords[0]),
-                subset
-            )
-            # if we only have one point then we're set
-            if (len(line.coords) == 1) or (
-                (len(line.coords) == 2) and (line.coords[0] == line.coords[-1])
-            ):
-                stats.end = stats.start
-            # otherwise find all the contour crossings to get the total
-            else:
-                previous_elevation: float = stats.start
-                for coord in line.coords[1:]:
-                    elevation: float = self.__nearest_contour__(
-                        Point(coord),
-                        subset
-                    )
-                    if elevation > previous_elevation:
-                        stats.climb += elevation - previous_elevation
-                    elif elevation < previous_elevation:
-                        stats.descent += previous_elevation - elevation
-                    previous_elevation = elevation
-                # after the loop, we already have our final elevation
-                stats.end = elevation
+            previous_elevation: float = stats.start
+            for coord in line.coords[1:]:
+                elevation: float = self.__nearest_contour__(Point(coord))
+                if elevation > previous_elevation:
+                    stats.climb += elevation - previous_elevation
+                elif elevation < previous_elevation:
+                    stats.descent += previous_elevation - elevation
+                previous_elevation = elevation
+            # after the loop, we already have our final elevation
+            stats.end = elevation
         return stats
 
 
