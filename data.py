@@ -125,12 +125,6 @@ class DataSource:
         # load this file to memory
         self.logger.info('Loading %s', self.filename)
         gdf = gp.read_file(self.filename)
-        # limit to just the columns we need
-        surplus_columns: List[str] = gdf.columns.tolist()
-        surplus_columns.remove("geometry")
-        surplus_columns.remove(self.lookup_field)
-        gdf.drop(surplus_columns, axis=1, inplace=True)
-        gdf.rename(columns={self.lookup_field: "elevation"}, inplace=True)
         # reproject if necessary
         if self.source_crs != 'EPSG:4326':
             self.logger.info(
@@ -138,8 +132,13 @@ class DataSource:
                 self.source_crs
             )
             gdf.to_crs(4326)
-        # crop to bbox
-        self.gdf = gp.clip(gdf, bbox, keep_geom_type=True)
+        # crop to bbox and standardise fields
+        self.logger.info('Cropping to %s', bbox)
+        self.gdf = gdf.loc[
+            gdf.sindex.query(bbox),
+            ["geometry", self.lookup_field]
+        ]
+        self.gdf.rename(columns={self.lookup_field: "elevation"}, inplace=True)
         # convert units if necessary
         if self.source_units in ["feet", "foot", "ft"]:
             self.logger.info(
