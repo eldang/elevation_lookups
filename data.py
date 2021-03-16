@@ -218,8 +218,7 @@ class DataSource:
             gdf = self.gdf
         if idx is None:
             idx = self.idx
-        if subset == []:
-            subset = self.__contour_point_subset__(point, idx)
+        subset = self.__contour_point_subset__(point, idx)
         # if we have exactly one result, it must be the nearest
         if len(subset) == 1:
             return gdf.elevation.iloc[subset[0]]
