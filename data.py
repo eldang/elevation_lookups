@@ -168,10 +168,9 @@ class DataSource:
 
 
     def __nearest_contour__(self, point: Point) -> float:
-        # if our point happens to be on a contour, just run with that one
-        subset: List[int] = self.idx.query(point, predicate="touches")
-        # if not, then check for intersections with progressively larger
+        # Check for intersections with progressively larger
         # buffers until we find at least one contour
+        subset: List[int] = []
         padding: float = 0.00001
         i: int = 0
         while len(subset) < 1:
