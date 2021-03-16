@@ -17,15 +17,16 @@ from typing import List
 
 SCREEN_PRECISION: int = 2  # round terminal output to 1cm
 FOOT_IN_M: float = 0.3048
+NULL_ELEVATION: float = -11000  # deeper than the deepest ocean
 
 
 class ElevationStats:
 
     def __init__(self) -> None:
-        self.start: float = -1
-        self.end: float = -1
-        self.climb: float = -1
-        self.descent: float = -1
+        self.start: float = NULL_ELEVATION
+        self.end: float = NULL_ELEVATION
+        self.climb: float = NULL_ELEVATION
+        self.descent: float = NULL_ELEVATION
 
     def __str__(self) -> str:
         return " \t".join([
@@ -159,6 +160,7 @@ class DataSource:
         stats = ElevationStats()
         stats.start = self.point_elevation(Point(line.coords[0]))
         stats.end = self.point_elevation(Point(line.coords[-1]))
+        stats = self.line_elevation(line, stats)
         return stats
 
 
@@ -173,9 +175,24 @@ class DataSource:
             exit(1)
 
 
-    def __nearest_contour__(self, point: Point) -> float:
+    def line_elevation(
+        self,
+        line: LineString,
+        stats: ElevationStats
+    ) -> ElevationStats:
+        if self.lookup_method == "contour_lines":
+            return self.__contour_line_crossings__(line, stats)
+        else:
+            self.logger.critical(
+                "Lookup method %s is not defined",
+                self.lookup_method
+            )
+            exit(1)
+
+
+    def __contour_point_subset__(self, point: Point) -> List[int]:
         # if our point happens to be on a contour, just run with that one
-        subset = self.idx.query(point, predicate="touches")
+        subset: List[int] = self.idx.query(point, predicate="touches")
         # if not, then check for intersections with progressively larger
         # buffers until we find at least one contour
         padding: float = 0.00001
@@ -185,6 +202,16 @@ class DataSource:
             subset = self.idx.query(
                 point.buffer(padding * i), predicate="intersects"
             )
+        return subset
+
+
+    def __nearest_contour__(
+        self,
+        point: Point,
+        subset: List[int] = []
+    ) -> float:
+        if subset == []:
+            subset = self.__contour_point_subset__(point)
         # if we have exactly one result, it must be the nearest
         if len(subset) == 1:
             return self.gdf.elevation.iloc[subset[0]]
@@ -196,6 +223,52 @@ class DataSource:
             distances = self.gdf.iloc[subset].distance(point)
         # and return the elevation of the closest contour
         return self.gdf.loc[distances.idxmin()]["elevation"]
+
+
+    def __contour_line_subset__(self, line: LineString) -> List[int]:
+        # first get all the contours our line crosses
+        crossings: List[int] = self.idx.query(line, predicate="intersects")
+        # then get the nearest one to the start point
+        # in case it's outside the line
+        start_point: List[int] = self.__contour_point_subset__(
+            Point(line.coords[0])
+        )
+        # same for end point
+        end_point: List[int] = self.__contour_point_subset__(
+            Point(line.coords[-1])
+        )
+        # and just combine them without duplicates
+        return list(set(crossings).union(start_point, end_point))
+
+
+    def __contour_line_crossings__(
+        self,
+        line: LineString,
+        stats: ElevationStats
+    ) -> ElevationStats:
+        # get all the contours that could be closest to any point in the line
+        subset: List[int] = self.__contour_line_subset__(line)
+        # if we only have one, then we know the line doesn't climb or descend
+        if len(subset) == 1:
+            stats.climb = 0
+            stats.descent = 0
+        else:
+            # otherwise find all the contour crossings to get the total
+            previous_elevation: float = NULL_ELEVATION
+            for coord in line.coords:
+                elevation: float = self.__nearest_contour__(
+                    Point(coord),
+                    subset
+                )
+                if previous_elevation == NULL_ELEVATION:
+                    stats.climb = 0
+                    stats.descent = 0
+                elif elevation > previous_elevation:
+                    stats.climb += elevation - previous_elevation
+                elif elevation < previous_elevation:
+                    stats.descent += previous_elevation - elevation
+                previous_elevation = elevation
+        return stats
 
 
     def __str__(self) -> str:
