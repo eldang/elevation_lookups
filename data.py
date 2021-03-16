@@ -133,7 +133,10 @@ class DataSource:
             )
             gdf.to_crs(4326)
         # crop to bbox and standardise fields
-        self.logger.info('Cropping to %s', bbox)
+        self.logger.info(
+            'Cropping to %s',
+            [bbox.exterior.coords[0], bbox.exterior.coords[2]]
+        )
         self.gdf = gdf.loc[
             gdf.sindex.query(bbox),
             ["geometry", self.lookup_field]
