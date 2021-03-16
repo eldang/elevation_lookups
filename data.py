@@ -73,7 +73,6 @@ class DataSource:
                 self.filename: str = os.path.join(
                     self.data_dir, source["filename"]
                 )
-                self.filetype: str = source["format"]
                 self.source_crs: str = source["crs"]
                 self.lookup_method: str = source["lookup_method"]
                 self.lookup_field: str = source["lookup_field"]
