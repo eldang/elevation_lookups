@@ -258,8 +258,8 @@ class DataSource:
                 subset
             )
             # if we only have one point then we're set
-            if len(line.coords) == 1 or (
-                len(line.coords == 2) and line.coords[0] == line.coords[-1]
+            if (len(line.coords) == 1) or (
+                (len(line.coords) == 2) and (line.coords[0] == line.coords[-1])
             ):
                 stats.end = stats.start
             # otherwise find all the contour crossings to get the total
