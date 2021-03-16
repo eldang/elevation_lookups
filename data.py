@@ -25,8 +25,8 @@ class ElevationStats:
     def __init__(self) -> None:
         self.start: float = NULL_ELEVATION
         self.end: float = NULL_ELEVATION
-        self.climb: float = NULL_ELEVATION
-        self.descent: float = NULL_ELEVATION
+        self.climb: float = 0
+        self.descent: float = 0
 
     def __str__(self) -> str:
         return " \t".join([
@@ -157,12 +157,8 @@ class DataSource:
 
 
     def process(self, line: LineString) -> ElevationStats:
-        return self.line_elevation(line, ElevationStats())
-
-
-    def point_elevation(self, point: Point) -> float:
         if self.lookup_method == "contour_lines":
-            return self.__nearest_contour__(point)
+            return self.__contour_line_crossings__(line)
         else:
             self.logger.critical(
                 "Lookup method %s is not defined",
@@ -171,22 +167,7 @@ class DataSource:
             exit(1)
 
 
-    def line_elevation(
-        self,
-        line: LineString,
-        stats: ElevationStats
-    ) -> ElevationStats:
-        if self.lookup_method == "contour_lines":
-            return self.__contour_line_crossings__(line, stats)
-        else:
-            self.logger.critical(
-                "Lookup method %s is not defined",
-                self.lookup_method
-            )
-            exit(1)
-
-
-    def __contour_point_subset__(self, point: Point) -> List[int]:
+    def __nearest_contour__(self, point: Point) -> float:
         # if our point happens to be on a contour, just run with that one
         subset: List[int] = self.idx.query(point, predicate="touches")
         # if not, then check for intersections with progressively larger
@@ -198,16 +179,6 @@ class DataSource:
             subset = self.idx.query(
                 point.buffer(padding * i), predicate="intersects"
             )
-        return subset
-
-
-    def __nearest_contour__(
-        self,
-        point: Point,
-        subset: List[int] = []
-    ) -> float:
-        if subset == []:
-            subset = self.__contour_point_subset__(point)
         # if we have exactly one result, it must be the nearest
         if len(subset) == 1:
             return self.gdf.elevation.iloc[subset[0]]
@@ -221,31 +192,9 @@ class DataSource:
         return self.gdf.loc[distances.idxmin()]["elevation"]
 
 
-    def __contour_line_subset__(self, line: LineString) -> List[int]:
-        # first get all the contours our line crosses
-        crossings: List[int] = self.idx.query(line, predicate="intersects")
-        # then get the nearest one to the start point
-        # in case it's outside the line
-        start_point: List[int] = self.__contour_point_subset__(
-            Point(line.coords[0])
-        )
-        # same for end point
-        end_point: List[int] = self.__contour_point_subset__(
-            Point(line.coords[-1])
-        )
-        # and just combine them without duplicates
-        return list(set(crossings).union(start_point, end_point))
-
-
-    def __contour_line_crossings__(
-        self,
-        line: LineString,
-        stats: ElevationStats
-    ) -> ElevationStats:
-        # initialise what will be running totals
-        stats.climb = 0
-        stats.descent = 0
-        # otherwise find the elevation of the first point
+    def __contour_line_crossings__(self, line: LineString) -> ElevationStats:
+        stats = ElevationStats()
+        # Find the elevation of the first point
         stats.start = self.__nearest_contour__(Point(line.coords[0]))
         # if we only have one point then we're set
         if (len(line.coords) == 1) or (
