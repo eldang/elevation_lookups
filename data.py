@@ -186,16 +186,22 @@ class DataSource:
             exit(1)
 
 
-    def __contour_point_subset__(self, point: Point) -> List[int]:
+    def __contour_point_subset__(
+        self,
+        point: Point,
+        idx=None
+    ) -> List[int]:
+        if idx is None:
+            idx = self.idx
         # if our point happens to be on a contour, just run with that one
-        subset: List[int] = self.idx.query(point, predicate="touches")
+        subset: List[int] = idx.query(point, predicate="touches")
         # if not, then check for intersections with progressively larger
         # buffers until we find at least one contour
         padding: float = 0.00001
         i: int = 0
         while len(subset) < 1:
             i += 1
-            subset = self.idx.query(
+            subset = idx.query(
                 point.buffer(padding * i), predicate="intersects"
             )
         return subset
@@ -204,21 +210,27 @@ class DataSource:
     def __nearest_contour__(
         self,
         point: Point,
-        subset: List[int] = []
+        subset: List[int] = [],
+        gdf=None,
+        idx=None
     ) -> float:
+        if gdf is None:
+            gdf = self.gdf
+        if idx is None:
+            idx = self.idx
         if subset == []:
-            subset = self.__contour_point_subset__(point)
+            subset = self.__contour_point_subset__(point, idx)
         # if we have exactly one result, it must be the nearest
         if len(subset) == 1:
-            return self.gdf.elevation.iloc[subset[0]]
+            return gdf.elevation.iloc[subset[0]]
         # otherwise calculate distances among the subset returned by .query
         with warnings.catch_warnings():
             # suppressing the geopandas UserWarning about distances from a
             # projected CRS, because we only care about _relative_ distance
             warnings.simplefilter(action='ignore', category=UserWarning)
-            distances = self.gdf.iloc[subset].distance(point)
+            distances = gdf.iloc[subset].distance(point)
         # and return the elevation of the closest contour
-        return self.gdf.loc[distances.idxmin()]["elevation"]
+        return gdf.loc[distances.idxmin()]["elevation"]
 
 
     def __contour_line_subset__(self, line: LineString) -> List[int]:
@@ -253,9 +265,12 @@ class DataSource:
             stats.end = stats.start
         else:
             # otherwise find the elevation of the first point
+            gdf = self.gdf.iloc[subset]
+            idx = gdf.sindex
             stats.start = self.__nearest_contour__(
                 Point(line.coords[0]),
-                subset
+                gdf=gdf,
+                idx=idx
             )
             # if we only have one point then we're set
             if (len(line.coords) == 1) or (
