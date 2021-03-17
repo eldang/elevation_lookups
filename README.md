@@ -18,6 +18,12 @@ Then install the Python modules with:
 
 to make sure that they are built with the exact versions of the above dependencies that are present in the environment.  This makes spatial lookups significantly faster.
 
+### Docker
+
+If you're having trouble getting dependencies installed, you can try Docker. Build the image locally by doing `docker build -t elevation_lookup .`.
+
+TODO: Instructions for running it. Currently doing `docker run -i -t elevation_lookup bash`, then `python3 main.py`.
+
 ## Basic usage
 
 1. Put an input file in `input/`, and make sure `output/` and `data/` folders exist
