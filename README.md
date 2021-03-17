@@ -21,7 +21,7 @@ to make sure that they are built with the exact versions of the above dependenci
 ## Basic usage
 
 1. Put an input file in `input/`, and make sure `output/` and `data/` folders exist
-2. `python3`
+2. `python3 main.py inputfilename`
 
 ## Data sources
 
