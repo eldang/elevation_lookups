@@ -8,6 +8,8 @@ import os
 import time
 import warnings
 
+import elevation as eio  # type: ignore
+# elevation is an SRTM downloader.  See https://github.com/bopen/elevation
 import geopandas as gp  # type: ignore
 import requests
 
@@ -55,7 +57,7 @@ class DataSource:
         self.sources_file: str = data_source_list
 
         self.__choose_source__(bbox)
-        self.__download_file__()
+        self.__download_file__(bbox)
         self.__read_file__(bbox)
 
 
@@ -74,6 +76,7 @@ class DataSource:
                     self.data_dir, source["filename"]
                 )
                 self.source_crs: str = source["crs"]
+                self.download_method: str = source["download_method"]
                 self.lookup_method: str = source["lookup_method"]
                 self.lookup_field: str = source["lookup_field"]
                 self.source_units: str = source["units"]
@@ -96,7 +99,7 @@ class DataSource:
             exit(1)
 
 
-    def __download_file__(self) -> None:
+    def __download_file__(self, bbox: box) -> None:
         # create or replace local file if appropriate
         file_needed: bool = False
         if not os.path.exists(self.filename):
@@ -113,9 +116,21 @@ class DataSource:
                     self.recheck_days
                 )
         if file_needed:
-            req = requests.get(self.url)
-            with open(self.filename, 'wb') as outfile:
-                outfile.write(req.content)
+            if self.download_method == "url":
+                req = requests.get(self.url)
+                with open(self.filename, 'wb') as outfile:
+                    outfile.write(req.content)
+            elif self.download_method == "srtm":
+                eio.clip(
+                    bounds=bbox.bounds,
+                    output=os.path.join(os.getcwd(), self.filename)
+                )
+            else:
+                self.logger.critical(
+                    'Download method %s not supported',
+                    self.download_method
+                )
+                exit(1)
         else:
             self.logger.info('Data file already saved at %s', self.filename)
 

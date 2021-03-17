@@ -6,9 +6,22 @@
 			"filename": "seattle_contours.geojson",
 			"crs": "EPSG:4326",
 			"bbox": [-122.4359526776817120,47.4448428851168060, -122.2173553791662357,47.7779711955390596],
+			"download_method": "url",
 			"lookup_method": "contour_lines",
 			"lookup_field": "CL93_ELEV",
 			"units": "feet",
+			"recheck_interval_days": 30
+		},
+		{
+			"name": "SRTM Poundbury",
+			"url": "https://www.usgs.gov/centers/eros/science/usgs-eros-archive-digital-elevation-shuttle-radar-topography-mission-srtm-1-arc",
+			"filename": "srtm_3W50N2W51N_dorchester.tif",
+			"crs": "EPSG:4326",
+			"bbox": [-3,50, -2,51],
+			"download_method": "srtm",
+			"lookup_method": "raster",
+			"lookup_field": "",
+			"units": "metres",
 			"recheck_interval_days": 30
 		}
 	]
