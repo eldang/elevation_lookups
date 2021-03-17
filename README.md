@@ -1,41 +1,69 @@
 # elevation
 
-Some quick notes on the way to a scope of work to address https://github.com/a-b-street/abstreet/issues/82
+Takes an input file of paths described as series of points, outputs a file of data about the elevation changes along those paths.
+
+This is intended as a way of addressing https://github.com/a-b-street/abstreet/issues/82 but may be more broadly useful.
+
+## Installation / requirements
+
+This utility is being developed and tested in Python 3.9.2 on a Mac, and should in theory work with older versions of Python 3.  Before installing the modules listed in [requirements.txt](requirements.txt), make sure the following are present in the environment in which it will run:
+
+* [GDAL](https://www.gdal.org/), tested with version 3.2.1, should in theory work with any version >= 3.0.4.
+* [GEOS](https://trac.osgeo.org/geos), tested with version 3.9.1, should in theory work with any version >= 3.3.9.
+* [PROJ](https://proj.org/), tested with version 7.2.1, should in theory work with any version >= 7.2.0.
+
+Then install the Python modules with:
+
+`pip3 install -r requirements.txt --no-binary pygeos --no-binary shapely`
+
+to make sure that they are built with the exact versions of the above dependencies that are present in the environment.  This makes spatial lookups significantly faster.
+
+## Basic usage
+
+1. Put an input file in `input/`, and make sure `output/` and `data/` folders exist
+2. `python3`
 
 ## Data sources
 
-1. SRTM as global baseline, overridden by preferred datasets where locally available
-2. Seattle countours from https://data-seattlecitygis.opendata.arcgis.com/datasets/contour-lines-1993 - the notes warn against downloading it but it's actually only 189MB zipped / 304MB unzipped.  Looking closely at some areas I know well, the accuracy and detail both seem very good.
-3. Possibility of using data that Access Maps has surveyed, but so far I think the contours will serve our needs better.
-4. WA LIDAR https://lidarportal.dnr.wa.gov/#47.62076:-122.30622:18 - impressive detail, probably less convenient than using the contours where they exist.
+1. SRTM as global baseline, overridden by preferred datasets where locally available [TODO: not yet implemented]
+2. Seattle countours from https://data-seattlecitygis.opendata.arcgis.com/datasets/contour-lines-1993
+3. Adding other local data sources is straightforward if they are of an equivalent type to one already in use, and achievable if not.
 
-## What data do we need exactly?
+## Input format
 
-Thoughts so far:
+A text file in which each row is one path, and each row consists of tab-separated x,y coordinate pairs in order to describe a path, in unprojected decimal degrees.
 
-1. Definitely elevation at the middle of each intersection, so we can calculate grades between them.
-2. Probably also total climb for each line segment between two intersections, so that non-monotonic climbs aren't missed.
-3. [setting this aside for now] Possibly also steepest segment characterisation, for unevenly steep blocks.
+## Output format
 
-I'm also doing some research on what existing bike routefinding packages use.
+A text file in which each row corresponds to a row of the input, with order preserved, and consists of 4 tab-separated values that describe the elevation of the path in the input file, in metres rounded to the nearest mm:
 
-## Roughly sketched out design
+`start_elevation	end_elevation	total_climb	total_descent`
 
-Data format: simple text files in which each row is one polyline, starting and ending at intersection middles.  Each row consists of a series of x,y coordinates separated by spaces; each coordinate is roughly a metre away from the previous.
+Some things to note:
 
-Script: runs as a batch, processing the input file and producing a text file as output, with rows that correspond to the rows of the input file.  Each row simply reports four numbers: start elevation, end elevation, total climb, total descent.
+* Any non-zero `total_descent` is expressed as a positive value, i.e. a path that descends by 1 metre will have a value of 1
+* `total_climb` and `total_descent` include intermediate ups and downs along the path, so it is not unusual for both to be non-zero, and in that case one of them will be larger than the difference between `start_elevation` and `end_elevation`
+* (`start_elevation` - `end_elevation` + `total_climb` - `total_descent`) should always be within 1mm of 0.
 
-Algorithm:
-1. Parse input file, exiting with an error if there are any parse failures.  While parsing it, count lines and points, and compute a bounding box.
-2. Use the bounding box to determine which data source to use, sticking to one consistent data source for one input file.  Use preferred local sources if available, falling back to a worldwide source (SRTM?) if not.
-3. Store local copies of data sources, and track when they were saved.  TBD: do we want to just download the required bbox, that + some padding, or the whole data source?
-4. Loop over the lines, computing the elevations and deltas as we go
-5. Extra credit: where multiple data sources are available, is it useful to have the API check more than one and warn about discrepancies?
+## Adding or editing data sources
 
-Program / data structure:
+Data sources are defined in [datasources.json](datasources.json).  The order of entries in that file matters, because the utility will use the first data source that covers all points in the input file.  Each source is defined as an object in the JSON, as in this example (note that JavaScript-style comments aren't allowed in an actual JSON file):
 
-* main.py: main control loop
-* files.py: defines objects for file operations:
-	* input_file(): reads input files, reports stats back about them, and allows iteration through them
-	* output_file(): opens output files and writes to them
-* data.py: manages data sources
+```javascript
+{
+	"name": "Seattle 2ft contours", // a name for human readability only
+	"url": "https://opendata.arcgis.com/datasets/1545ab0b0fcc492886be92be25a9faa5_0.geojson",
+	"filename": "seattle_contours.geojson", // a filename to save a local copy as, into the data/ directory
+	"crs": "EPSG:4326", // the coordinate reference system of the original data file.  Any CRS that PROJ can handle works; files will be converted to EPSG:4326 on loading if they aren't already in that
+	"bbox": [-122.4359526776817120,47.4448428851168060, -122.2173553791662357,47.7779711955390596], // WSEN coordinates for the area covered by this file
+	"lookup_method": "contour_lines", // how to parse this file.  Has to have a pathway set up in data.py
+	"lookup_field": "CL93_ELEV", // the name of the field that actually has elevations in it
+	"units": "feet", // units of elevation; will be converted to metres if they aren't already
+	"recheck_interval_days": 30 // how often to check for updates to the original source file
+}
+```
+
+Currently, `contour_lines` is the only supported `lookup_method`.
+
+
+
