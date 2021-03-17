@@ -11,6 +11,7 @@ import warnings
 import elevation as eio  # type: ignore
 # elevation is an SRTM downloader.  See https://github.com/bopen/elevation
 import geopandas as gp  # type: ignore
+import rasterio  # type: ignore
 import requests
 
 from shapely.geometry import box, LineString, Point  # type: ignore
@@ -58,7 +59,16 @@ class DataSource:
 
         self.__choose_source__(bbox)
         self.__download_file__(bbox)
-        self.__read_file__(bbox)
+        if self.lookup_method == "contour_lines":
+            self.__read_vectors__(bbox)
+        elif self.lookup_method == "raster":
+            self.__read_raster__(bbox)
+        else:
+            self.logger.critical(
+                "Lookup method %s not implemented",
+                self.lookup_method
+            )
+            exit(1)
 
 
     def __choose_source__(self, bbox: box) -> None:
@@ -135,9 +145,8 @@ class DataSource:
             self.logger.info('Data file already saved at %s', self.filename)
 
 
-    def __read_file__(self, bbox: box) -> None:
-        # load this file to memory
-        self.logger.info('Loading %s', self.filename)
+    def __read_vectors__(self, bbox: box) -> None:
+        self.logger.info('Loading %s as vector data', self.filename)
         gdf = gp.read_file(self.filename)
         # reproject if necessary
         if self.source_crs != 'EPSG:4326':
@@ -170,6 +179,12 @@ class DataSource:
             )
         self.logger.info("Creating spatial index")
         self.idx = self.gdf.sindex
+
+
+    def __read_raster__(self, bbox: box) -> None:
+        self.logger.info('Loading %s as raster data', self.filename)
+        with rasterio.open(self.filename) as src:
+            self.raster = src.read()
 
 
     def process(self, line: LineString) -> ElevationStats:

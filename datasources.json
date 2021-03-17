@@ -15,7 +15,7 @@
 		{
 			"name": "SRTM Poundbury",
 			"url": "https://www.usgs.gov/centers/eros/science/usgs-eros-archive-digital-elevation-shuttle-radar-topography-mission-srtm-1-arc",
-			"filename": "srtm_3W50N2W51N_dorchester.tif",
+			"filename": "srtm_poundbury.tif",
 			"crs": "EPSG:4326",
 			"bbox": [-3,50, -2,51],
 			"download_method": "srtm",
