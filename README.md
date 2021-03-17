@@ -27,7 +27,7 @@ docker run \
   --mount type=bind,source=`pwd`/input,target=/elevation/input,readonly \
   --mount type=bind,source=`pwd`/data,target=/elevation/data \
   --mount type=bind,source=`pwd`/output,target=/elevation/output \
-  -i -t elevation_lookups python3 main.py my_query
+  -t elevation_lookups python3 main.py my_query
 ```
 
 The output should appear in your local `output` directory.
