@@ -20,9 +20,17 @@ to make sure that they are built with the exact versions of the above dependenci
 
 ### Docker
 
-If you're having trouble getting dependencies installed, you can try Docker. Build the image locally by doing `docker build -t elevation_lookup .`.
+If you're having trouble getting dependencies installed, you can try Docker. Build the image locally by doing `docker build -t elevation_lookup .`. You can then use it by binding directories on your filesystem to the Docker container. Assuming you've created a file called `input/my_query`:
 
-TODO: Instructions for running it. Currently doing `docker run -i -t elevation_lookup bash`, then `python3 main.py`.
+```
+docker run \
+  --mount type=bind,source=`pwd`/input,target=/elevation/input,readonly \
+  --mount type=bind,source=`pwd`/data,target=/elevation/data \
+  --mount type=bind,source=`pwd`/output,target=/elevation/output \
+  -i -t elevation_lookups python3 main.py my_query
+```
+
+The output should appear in your local `output` directory.
 
 ## Basic usage
 
