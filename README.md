@@ -35,7 +35,7 @@ The output should appear in your local `output` directory.
 ## Basic usage
 
 1. Put an input file in `input/`, and make sure `output/` and `data/` folders exist
-2. `python3`
+2. `python3 main.py inputfilename`
 
 ## Data sources
 

@@ -8,7 +8,10 @@ import os
 import time
 import warnings
 
+import elevation as eio  # type: ignore
+# elevation is an SRTM downloader.  See https://github.com/bopen/elevation
 import geopandas as gp  # type: ignore
+import rasterio  # type: ignore
 import requests
 
 from shapely.geometry import box, LineString, Point  # type: ignore
@@ -18,6 +21,17 @@ from typing import List
 SCREEN_PRECISION: int = 2  # round terminal output to 1cm
 FOOT_IN_M: float = 0.3048
 NULL_ELEVATION: float = -11000  # deeper than the deepest ocean
+
+
+
+def pad_bounds(bounds: List[float], padding: float) -> List[float]:
+    return [
+        bounds[0] - padding,
+        bounds[1] - padding,
+        bounds[2] + padding,
+        bounds[3] + padding
+    ]
+
 
 
 class ElevationStats:
@@ -55,8 +69,17 @@ class DataSource:
         self.sources_file: str = data_source_list
 
         self.__choose_source__(bbox)
-        self.__download_file__()
-        self.__read_file__(bbox)
+        self.__download_file__(bbox)
+        if self.lookup_method == "contour_lines":
+            self.__read_vectors__(bbox)
+        elif self.lookup_method == "raster":
+            self.__read_raster__(bbox)
+        else:
+            self.logger.critical(
+                "Lookup method %s not implemented",
+                self.lookup_method
+            )
+            exit(1)
 
 
     def __choose_source__(self, bbox: box) -> None:
@@ -74,6 +97,7 @@ class DataSource:
                     self.data_dir, source["filename"]
                 )
                 self.source_crs: str = source["crs"]
+                self.download_method: str = source["download_method"]
                 self.lookup_method: str = source["lookup_method"]
                 self.lookup_field: str = source["lookup_field"]
                 self.source_units: str = source["units"]
@@ -96,7 +120,7 @@ class DataSource:
             exit(1)
 
 
-    def __download_file__(self) -> None:
+    def __download_file__(self, bbox: box) -> None:
         # create or replace local file if appropriate
         file_needed: bool = False
         if not os.path.exists(self.filename):
@@ -113,16 +137,27 @@ class DataSource:
                     self.recheck_days
                 )
         if file_needed:
-            req = requests.get(self.url)
-            with open(self.filename, 'wb') as outfile:
-                outfile.write(req.content)
+            if self.download_method == "url":
+                req = requests.get(self.url)
+                with open(self.filename, 'wb') as outfile:
+                    outfile.write(req.content)
+            elif self.download_method == "srtm":
+                eio.clip(
+                    bounds=pad_bounds(bbox.bounds, 0.001),
+                    output=os.path.join(os.getcwd(), self.filename)
+                )
+            else:
+                self.logger.critical(
+                    'Download method %s not supported',
+                    self.download_method
+                )
+                exit(1)
         else:
             self.logger.info('Data file already saved at %s', self.filename)
 
 
-    def __read_file__(self, bbox: box) -> None:
-        # load this file to memory
-        self.logger.info('Loading %s', self.filename)
+    def __read_vectors__(self, bbox: box) -> None:
+        self.logger.info('Loading %s as vector data', self.filename)
         gdf = gp.read_file(self.filename)
         # reproject if necessary
         if self.source_crs != 'EPSG:4326':
@@ -157,9 +192,17 @@ class DataSource:
         self.idx = self.gdf.sindex
 
 
+    def __read_raster__(self, bbox: box) -> None:
+        self.logger.info('Loading %s as raster data', self.filename)
+        self.raster_dataset = rasterio.open(self.filename)
+        self.raster_values = self.raster_dataset.read(1)
+
+
     def process(self, line: LineString) -> ElevationStats:
         if self.lookup_method == "contour_lines":
             return self.__contour_line_crossings__(line)
+        elif self.lookup_method == "raster":
+            return self.__raster_line_lookups__(line)
         else:
             self.logger.critical(
                 "Lookup method %s is not defined",
@@ -206,6 +249,36 @@ class DataSource:
             previous_elevation: float = stats.start
             for coord in line.coords[1:]:
                 elevation: float = self.__nearest_contour__(Point(coord))
+                if elevation > previous_elevation:
+                    stats.climb += elevation - previous_elevation
+                elif elevation < previous_elevation:
+                    stats.descent += previous_elevation - elevation
+                previous_elevation = elevation
+            # after the loop, we already have our final elevation
+            stats.end = elevation
+        return stats
+
+
+    def __raster_point_lookup__(self, point: Point) -> float:
+        row, col = self.raster_dataset.index(point.x, point.y)
+        return self.raster_values[row, col]
+
+
+
+    def __raster_line_lookups__(self, line: LineString) -> ElevationStats:
+        stats = ElevationStats()
+        # Find the elevation of the first point
+        stats.start = self.__raster_point_lookup__(Point(line.coords[0]))
+        # if we only have one point then we're set
+        if (len(line.coords) == 1) or (
+            (len(line.coords) == 2) and (line.coords[0] == line.coords[-1])
+        ):
+            stats.end = stats.start
+        # otherwise find all the contour crossings to get the total
+        else:
+            previous_elevation: float = stats.start
+            for coord in line.coords[1:]:
+                elevation: float = self.__raster_point_lookup__(Point(coord))
                 if elevation > previous_elevation:
                     stats.climb += elevation - previous_elevation
                 elif elevation < previous_elevation:

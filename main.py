@@ -39,8 +39,7 @@ __license__ = "Apache"
 @click.option(
     '--log',
     type=click.Choice(
-        ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        case_sensitive=False
+        ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
     ),
     default='INFO',
     help=('Logging level.  '

@@ -1,8 +1,10 @@
-click==7.1.2
+click==6.7
+elevation==1.1.2
 flake8==3.8.4
 geopandas==0.9.0
 mypy==0.812
 pygeos==0.9
+rasterio==1.2.1
 requests==2.25.1
 rtree==0.9.7
 shapely==1.7.1
