@@ -23,6 +23,17 @@ FOOT_IN_M: float = 0.3048
 NULL_ELEVATION: float = -11000  # deeper than the deepest ocean
 
 
+
+def pad_bounds(bounds: List[float], padding: float) -> List[float]:
+    return [
+        bounds[0] - padding,
+        bounds[1] - padding,
+        bounds[2] + padding,
+        bounds[3] + padding
+    ]
+
+
+
 class ElevationStats:
 
     def __init__(self) -> None:
@@ -132,7 +143,7 @@ class DataSource:
                     outfile.write(req.content)
             elif self.download_method == "srtm":
                 eio.clip(
-                    bounds=bbox.bounds,
+                    bounds=pad_bounds(bbox.bounds, 0.001),
                     output=os.path.join(os.getcwd(), self.filename)
                 )
             else:
@@ -183,13 +194,15 @@ class DataSource:
 
     def __read_raster__(self, bbox: box) -> None:
         self.logger.info('Loading %s as raster data', self.filename)
-        with rasterio.open(self.filename) as src:
-            self.raster = src.read()
+        self.raster_dataset = rasterio.open(self.filename)
+        self.raster_values = self.raster_dataset.read(1)
 
 
     def process(self, line: LineString) -> ElevationStats:
         if self.lookup_method == "contour_lines":
             return self.__contour_line_crossings__(line)
+        elif self.lookup_method == "raster":
+            return self.__raster_line_lookups__(line)
         else:
             self.logger.critical(
                 "Lookup method %s is not defined",
@@ -236,6 +249,36 @@ class DataSource:
             previous_elevation: float = stats.start
             for coord in line.coords[1:]:
                 elevation: float = self.__nearest_contour__(Point(coord))
+                if elevation > previous_elevation:
+                    stats.climb += elevation - previous_elevation
+                elif elevation < previous_elevation:
+                    stats.descent += previous_elevation - elevation
+                previous_elevation = elevation
+            # after the loop, we already have our final elevation
+            stats.end = elevation
+        return stats
+
+
+    def __raster_point_lookup__(self, point: Point) -> float:
+        row, col = self.raster_dataset.index(point.x, point.y)
+        return self.raster_values[row, col]
+
+
+
+    def __raster_line_lookups__(self, line: LineString) -> ElevationStats:
+        stats = ElevationStats()
+        # Find the elevation of the first point
+        stats.start = self.__raster_point_lookup__(Point(line.coords[0]))
+        # if we only have one point then we're set
+        if (len(line.coords) == 1) or (
+            (len(line.coords) == 2) and (line.coords[0] == line.coords[-1])
+        ):
+            stats.end = stats.start
+        # otherwise find all the contour crossings to get the total
+        else:
+            previous_elevation: float = stats.start
+            for coord in line.coords[1:]:
+                elevation: float = self.__raster_point_lookup__(Point(coord))
                 if elevation > previous_elevation:
                     stats.climb += elevation - previous_elevation
                 elif elevation < previous_elevation:
