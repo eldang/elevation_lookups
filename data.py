@@ -105,10 +105,7 @@ class DataSource:
                 self.lookup_field: str = source["lookup_field"]
                 self.source_units: str = source["units"]
                 self.recheck_days: int = source["recheck_interval_days"]
-                self.logger.info(
-                    'Using data source: %s',
-                    self.name
-                )
+                self.logger.info('Using data source: %s', self.name)
                 source_found = True
                 break
             else:
