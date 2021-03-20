@@ -6,15 +6,18 @@ import json
 import logging
 import os
 import time
+import urllib.request as ftp
 import warnings
 
 import elevation as eio  # type: ignore
 # elevation is an SRTM downloader.  See https://github.com/bopen/elevation
 import geopandas as gp  # type: ignore
+import pyproj
 import rasterio  # type: ignore
 import requests
 
 from shapely.geometry import box, LineString, Point  # type: ignore
+from shapely.ops import transform  # type: ignore
 from typing import List
 
 
@@ -103,9 +106,8 @@ class DataSource:
                 self.source_units: str = source["units"]
                 self.recheck_days: int = source["recheck_interval_days"]
                 self.logger.info(
-                    'Using data source: %s %s',
-                    self.name,
-                    self.url
+                    'Using data source: %s',
+                    self.name
                 )
                 source_found = True
                 break
@@ -125,8 +127,7 @@ class DataSource:
         file_needed: bool = False
         if not os.path.exists(self.filename):
             file_needed = True
-            self.logger.info('Downloading data from %s', self.url)
-        else:
+        elif self.download_method != "local" and self.recheck_days is not None:
             age: float = time.time() - os.stat(self.filename).st_mtime
             if age > self.recheck_days * 60 * 60 * 24:
                 file_needed = True
@@ -137,15 +138,25 @@ class DataSource:
                     self.recheck_days
                 )
         if file_needed:
-            if self.download_method == "url":
+            if self.download_method == "http":
+                self.logger.info('Downloading %s as http', self.url)
                 req = requests.get(self.url)
                 with open(self.filename, 'wb') as outfile:
                     outfile.write(req.content)
+            elif self.download_method == "ftp":
+                self.logger.info('Downloading %s as ftp', self.url)
+                print(ftp.urlretrieve(self.url, self.filename))
             elif self.download_method == "srtm":
                 eio.clip(
                     bounds=pad_bounds(bbox.bounds, 0.001),
                     output=os.path.join(os.getcwd(), self.filename)
                 )
+            elif self.download_method == "local":
+                self.logger.critical(
+                    'Local file %s not found.',
+                    self.filename
+                )
+                exit(1)
             else:
                 self.logger.critical(
                     'Download method %s not supported',
@@ -195,7 +206,15 @@ class DataSource:
     def __read_raster__(self, bbox: box) -> None:
         self.logger.info('Loading %s as raster data', self.filename)
         self.raster_dataset = rasterio.open(self.filename)
-        self.raster_values = self.raster_dataset.read(1)
+        self.raster_values = self.raster_dataset.read(int(self.lookup_field))
+        # instead of reprojecting a raster,
+        # configure a reprojector for queries to it
+        if self.source_crs != "EPSG:4326":
+            self.reprojector = pyproj.Transformer.from_crs(
+                crs_from=pyproj.CRS("EPSG:4326"),
+                crs_to=pyproj.CRS(self.source_crs),
+                always_xy=True
+            ).transform
 
 
     def process(self, line: LineString) -> ElevationStats:
@@ -260,7 +279,11 @@ class DataSource:
 
 
     def __raster_point_lookup__(self, point: Point) -> float:
-        row, col = self.raster_dataset.index(point.x, point.y)
+        if self.source_crs == "EPSG:4326":
+            row, col = self.raster_dataset.index(point.x, point.y)
+        else:
+            projected = transform(self.reprojector, point)
+            row, col = self.raster_dataset.index(projected.x, projected.y)
         return self.raster_values[row, col]
 
 

@@ -6,23 +6,35 @@
 			"filename": "seattle_contours.geojson",
 			"crs": "EPSG:4326",
 			"bbox": [-122.4359526776817120,47.4448428851168060, -122.2173553791662357,47.7779711955390596],
-			"download_method": "url",
+			"download_method": "http",
 			"lookup_method": "contour_lines",
 			"lookup_field": "CL93_ELEV",
 			"units": "feet",
 			"recheck_interval_days": 30
 		},
 		{
+			"name": "King County 2016 LIDAR, block 1 (Seattle & Lake Washington)",
+			"url": "ftp://ftp.coast.noaa.gov/pub/DigitalCoast/raster2/elevation/WA_King_DEM_2016_8589/kingcounty_delivery1_be.tif",
+			"filename": "kc_2016_lidar.tif",
+			"crs": "ESRI:103565",
+			"bbox": [-122.5459,47.13, -121.16,47.77],
+			"download_method": "ftp",
+			"lookup_method": "raster",
+			"lookup_field": 1,
+			"units": "feet",
+			"recheck_interval_days": 100
+		},
+		{
 			"name": "SRTM Poundbury",
-			"url": "https://www.usgs.gov/centers/eros/science/usgs-eros-archive-digital-elevation-shuttle-radar-topography-mission-srtm-1-arc",
+			"url": null,
 			"filename": "srtm_poundbury.tif",
 			"crs": "EPSG:4326",
 			"bbox": [-3,50, -2,51],
-			"download_method": "srtm",
+			"download_method": "local",
 			"lookup_method": "raster",
-			"lookup_field": "",
+			"lookup_field": 1,
 			"units": "metres",
-			"recheck_interval_days": 30
+			"recheck_interval_days": null
 		}
 	]
 }

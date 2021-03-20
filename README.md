@@ -37,11 +37,23 @@ The output should appear in your local `output` directory.
 1. Put an input file in `input/`, and make sure `output/` and `data/` folders exist
 2. `python3 main.py inputfilename`
 
-## Data sources
+## Data source options
 
-1. SRTM as global baseline, overridden by preferred datasets where locally available [TODO: not yet implemented]
-2. Seattle countours from https://data-seattlecitygis.opendata.arcgis.com/datasets/contour-lines-1993
-3. Adding other local data sources is straightforward if they are of an equivalent type to one already in use, and achievable if not.
+By default, this project will use SRTM data to look up elevations.  This dataset has the advantage of global availability and ease of use, but it is limited by a 30m pixel size and 1m vertical resolution.  It is also possible to configure locally preferred data sources.  See [#adding-or-editing-data-sources](below) for details on how to add sources.  These are the available types and examples that are preconfigured in this project:
+
+### Contour lines
+
+Data files may be in any of the [https://gdal.org/drivers/vector/index.html](vector formats supported by GDAL), though note that for formats not marked as "Built-in by default" you may need to install additional prerequisites.  All common vector formats are supported by default.
+
+The enclosed [datasources.json](datasources.json) sets up [https://data-seattlecitygis.opendata.arcgis.com/datasets/contour-lines-1993](Seattle's open 2ft contour dataset) as an example.
+
+**Important note**: a point's elevation is taken only from the nearest contour to it, with no attempt to interpolate.  This works well for 2ft contours in a hilly area, but may become a significant source of error for flatter regions or more widely spaced contours.
+
+### Raster elevation data
+
+Data files may be in any of the [https://gdal.org/drivers/raster/index.html](raster formats supported by GDAL), though note that for formats not marked as "Built-in by default" you may need to install additional prerequisites.  All common raster formats are supported by default.
+
+The enclosed [datasources.json](datasources.json) sets up "Delivery 1" from the Puget Sound LiDAR Consortium's [http://pugetsoundlidar.ess.washington.edu/lidardata/restricted/projects/2016king_county.html](2016 King County data) as an example.  It covers Seattle as well as some additional area S and E of Seattle.  Because it is defined after the Seattle 2ft contours, the contour dataset is used if it covers the required area, falling back to this LIDAR set for input files that are covered by it but not the contours.
 
 ## Input format
 
@@ -61,23 +73,21 @@ Some things to note:
 
 ## Adding or editing data sources
 
-Data sources are defined in [datasources.json](datasources.json).  The order of entries in that file matters, because the utility will use the first data source that covers all points in the input file.  Each source is defined as an object in the JSON, as in this example (note that JavaScript-style comments aren't allowed in an actual JSON file):
+Data sources are defined in [datasources.json](datasources.json).  The order of entries in that file matters, because the first data source that covers all points in the input file will be used.  Each source is defined as an object in the JSON, with the following fields in any order (all fields are required, just set them to `null` when they don't apply):
 
-```javascript
-{
-	"name": "Seattle 2ft contours", // a name for human readability only
-	"url": "https://opendata.arcgis.com/datasets/1545ab0b0fcc492886be92be25a9faa5_0.geojson",
-	"filename": "seattle_contours.geojson", // a filename to save a local copy as, into the data/ directory
-	"crs": "EPSG:4326", // the coordinate reference system of the original data file.  Any CRS that PROJ can handle works; files will be converted to EPSG:4326 on loading if they aren't already in that
-	"bbox": [-122.4359526776817120,47.4448428851168060, -122.2173553791662357,47.7779711955390596], // WSEN coordinates for the area covered by this file
-	"lookup_method": "contour_lines", // how to parse this file.  Has to have a pathway set up in data.py
-	"lookup_field": "CL93_ELEV", // the name of the field that actually has elevations in it
-	"units": "feet", // units of elevation; will be converted to metres if they aren't already
-	"recheck_interval_days": 30 // how often to check for updates to the original source file
-}
-```
-
-Currently, `contour_lines` is the only supported `lookup_method`.
-
-
+* `name`: a name for human readability
+* `url`: URL to download data from; if using a file that's already saved locally this field can be set to `null` or used to note the original source
+* `filename`: a filename to save a local copy as, into the data/ directory
+*	`crs`: the coordinate reference system of the original data file as a string in the format "EPSG:4326".  Any CRS that PROJ can handle works; files will be converted to EPSG:4326 on loading if they aren't already in that
+* `bbox`: WSEN coordinates for the area covered by this file
+* `download_method`: how to obtain the file.  Currently supported values:
+	* `http`: download http resource
+	* `ftp`: download ftp resource.  *NB: this is anonymous-only; authentication is not yet supported*
+	* `local`: don't fetch the file, assume that it already exists at `filename`
+* `lookup_method`: how to read elevations out from this file.  Currently supported values:
+	* `contour_lines`: each point is tagged with the elevation of the nearest contour
+	* `raster`: each point will get its elevation from the raster pixel it falls in
+* `lookup_field`: for vector data, this is the name of the field that actually has elevations in it; for raster data this is the band number.  Note that raster bands are 1-indexed, so for a 1-band raster the correct value of this field is 1
+* `units`: units of elevation; will be converted to metres if they aren't already
+* `recheck_interval_days`: how often to check for updates to the original source file; set to `null` to never check
 
