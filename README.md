@@ -39,7 +39,9 @@ The output should appear in your local `output` directory.
 
 ## Data source options
 
-By default, this project will use SRTM data to look up elevations.  This dataset has the advantage of global availability and ease of use, but it is limited by a 30m pixel size and 1m vertical resolution.  It is also possible to configure locally preferred data sources.  See [#adding-or-editing-data-sources](below) for details on how to add sources.  These are the available types and examples that are preconfigured in this project:
+By default, this project will use SRTM data to look up elevations.  This dataset has the advantage of global availability and ease of use, but it is limited by a coarse pixel size and 1m vertical resolution.  The pixel size between 56S and 60N is 0.00027̅°, which equates to 30m E-W at the equator and 15m E-W at 60N, and 30m N-S at any latitude.  In theory, the pixels triple in size at latitudes outside the range (56S, 60N), though in testing we are still finding 0.00027̅° pixels for Anchorage, Alaska, USA (> 61N).
+
+It is also possible to configure locally preferred data sources.  See [#adding-or-editing-data-sources](below) for details on how to do so.  These are the available types and examples that are preconfigured in this project:
 
 ### Contour lines
 
