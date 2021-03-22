@@ -8,7 +8,6 @@ This is intended as a way of addressing https://github.com/a-b-street/abstreet/i
 
 This utility is being developed and tested in Python 3.9.2 on a Mac, and should in theory work with older versions of Python 3.  Before installing the modules listed in [requirements.txt](requirements.txt), make sure the following are present in the environment in which it will run:
 
-* [GDAL](https://www.gdal.org/), tested with version 3.2.1, should in theory work with any version >= 3.0.4.
 * [GEOS](https://trac.osgeo.org/geos), tested with versions 3.6.2 & 3.9.1, should in theory work with any version >= 3.3.9.
 * [PROJ](https://proj.org/), tested with versions 7.2.1 & 8.0.0, should in theory work with any version >= 7.2.0.
 
@@ -17,6 +16,14 @@ Then install the Python modules with:
 `pip3 install -r requirements.txt --no-binary pygeos --no-binary shapely`
 
 to make sure that they are built with the exact versions of the above dependencies that are present in the environment.  This makes spatial lookups significantly faster.
+
+#### Special note on dependencies
+
+In theory, this project should also have the following dependency, because [rasterio needs it to build](https://rasterio.readthedocs.io/en/latest/installation.html#dependencies):
+
+* [GDAL](https://www.gdal.org/), tested with version 3.2.1, should in theory work with any version >= 1.11.
+
+However, in practice installing rasterio via [requirements.txt](requirements.txt) without the `--no-binary` flag works without having GDAL installed, and at the time of writing everything that this project does with rasterio works without GDAL present in the environment.  I am leaving this note here in case future work makes GDAL necessary again.
 
 ### Docker
 
