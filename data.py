@@ -19,6 +19,7 @@ import fiona  # type: ignore  # noqa: F401
 import geopandas as gp  # type: ignore
 import pyproj
 import rasterio  # type: ignore
+import rasterio.merge  # type: ignore
 import requests
 
 from shapely.geometry import box, LineString, Point  # type: ignore
@@ -70,6 +71,8 @@ class DataSource:
         self.__choose_source__(bbox)
         if self.lookup_method == "contour_lines":
             self.__read_vectors__(bbox)
+        elif self.download_method == "srtm":
+            self.__read_srtm__(bbox)
         elif self.lookup_method == "raster":
             self.__read_raster__(bbox)
         else:
@@ -157,6 +160,7 @@ class DataSource:
 
 
     def __configure_srtm__(self, bbox: box) -> None:
+        # hard-code some metadata
         self.name = "SRTM 30m"
         self.url = "https://lpdaac.usgs.gov/products/srtmgl1nv003/"
         self.filename = os.path.join(os.getcwd(), self.data_dir, "srtm")
@@ -168,35 +172,37 @@ class DataSource:
         self.lookup_field = "1"
         self.source_units = "meters"
         self.recheck_days = 100
+        # download file[s] if appropriate
         tiles: List[int] = [
             math.floor(bbox.bounds[0]),
             math.floor(bbox.bounds[1]),
             math.ceil(bbox.bounds[2]),
             math.ceil(bbox.bounds[3]),
         ]
+        self.srtm_tiles: List[str] = []
         for x in range(tiles[0], tiles[2]):
             for y in range(tiles[1], tiles[3]):
-                filename = os.path.join(
+                self.srtm_tiles.append(os.path.join(
                     self.filename,
                     "srtm." + str(x) + "." + str(y) + ".tif"
-                )
-                file_needed: bool = True
-                if os.path.exists(filename):
-                    age: float = time.time() - os.stat(filename).st_mtime
-                    if age > self.recheck_days * 60 * 60 * 24:
-                        self.logger.info(
-                            'Replacing %s because it`s > than %s days old',
-                            filename,
-                            self.recheck_days
-                        )
-                    else:
-                        file_needed = False
-                        self.logger.info('Tile already saved at %s', filename)
+                ))
+        for filename in self.srtm_tiles:
+            file_needed: bool = True
+            if os.path.exists(filename):
+                age: float = time.time() - os.stat(filename).st_mtime
+                if age > self.recheck_days * 60 * 60 * 24:
+                    self.logger.info(
+                        'Replacing %s because it`s > than %s days old',
+                        filename,
+                        self.recheck_days
+                    )
                 else:
-                    self.logger.info('Downloading %s', filename)
-                if file_needed:
-                    eio.clip(bounds=[x, y, x + 1, y + 1], output=filename)
-        self.filename = filename
+                    file_needed = False
+                    self.logger.info('Tile already saved at %s', filename)
+            else:
+                self.logger.info('Downloading %s', filename)
+            if file_needed:
+                eio.clip(bounds=[x, y, x + 1, y + 1], output=filename)
 
 
     def __read_vectors__(self, bbox: box) -> None:
@@ -233,6 +239,25 @@ class DataSource:
             )
         self.logger.info("Creating spatial index")
         self.idx = self.gdf.sindex
+
+
+    def __read_srtm__(self, bbox: box) -> None:
+        self.logger.info(
+            'Loading SRTM raster data cropped to %s',
+            [bbox.exterior.coords[0], bbox.exterior.coords[2]]
+        )
+        self.filename = os.path.join(self.filename, "temp.tif")
+        print(self.filename)
+        print(self.srtm_tiles)
+        print(bbox.bounds)
+        rasterio.merge.merge(
+            self.srtm_tiles,
+            bounds=bbox.bounds,
+            dst_path=self.filename
+        )
+        self.raster_dataset = rasterio.open(self.filename)
+        self.raster_values = self.raster_dataset.read(int(self.lookup_field))
+        print(self.raster_values)
 
 
     def __read_raster__(self, bbox: box) -> None:
