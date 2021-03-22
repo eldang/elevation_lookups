@@ -159,7 +159,7 @@ class DataSource:
     def __configure_srtm__(self, bbox: box) -> None:
         self.name = "SRTM 30m"
         self.url = "https://lpdaac.usgs.gov/products/srtmgl1nv003/"
-        self.filename = os.path.join(self.data_dir, "srtm")
+        self.filename = os.path.join(os.getcwd(), self.data_dir, "srtm")
         if not os.path.exists(self.filename):
             os.mkdir(self.filename)
         self.source_crs = "EPSG:4326"
@@ -176,9 +176,7 @@ class DataSource:
         ]
         for x in range(tiles[0], tiles[2]):
             for y in range(tiles[1], tiles[3]):
-                print(x, y)
                 filename = os.path.join(
-                    os.getcwd(),
                     self.filename,
                     "srtm." + str(x) + "." + str(y) + ".tif"
                 )
