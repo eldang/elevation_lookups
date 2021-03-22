@@ -11,6 +11,10 @@ import warnings
 
 import elevation as eio  # type: ignore
 # elevation is an SRTM downloader.  See https://github.com/bopen/elevation
+import fiona  # type: ignore  #noqa F401
+# fiona is only used indirectly, but needs to be explicitly imported to avoid:
+# ` AttributeError: partially initialized module 'fiona' has no
+# attribute '_loading' (most likely due to a circular import) `
 import geopandas as gp  # type: ignore
 import pyproj
 import rasterio  # type: ignore

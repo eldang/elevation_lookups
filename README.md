@@ -9,8 +9,8 @@ This is intended as a way of addressing https://github.com/a-b-street/abstreet/i
 This utility is being developed and tested in Python 3.9.2 on a Mac, and should in theory work with older versions of Python 3.  Before installing the modules listed in [requirements.txt](requirements.txt), make sure the following are present in the environment in which it will run:
 
 * [GDAL](https://www.gdal.org/), tested with version 3.2.1, should in theory work with any version >= 3.0.4.
-* [GEOS](https://trac.osgeo.org/geos), tested with version 3.9.1, should in theory work with any version >= 3.3.9.
-* [PROJ](https://proj.org/), tested with version 7.2.1, should in theory work with any version >= 7.2.0.
+* [GEOS](https://trac.osgeo.org/geos), tested with versions 3.6.2 & 3.9.1, should in theory work with any version >= 3.3.9.
+* [PROJ](https://proj.org/), tested with versions 7.2.1 & 8.0.0, should in theory work with any version >= 7.2.0.
 
 Then install the Python modules with:
 
@@ -20,7 +20,7 @@ to make sure that they are built with the exact versions of the above dependenci
 
 ### Docker
 
-If you're having trouble getting dependencies installed, you can try Docker. Build the image locally by doing `docker build -t elevation_lookup .`. You can then use it by binding directories on your filesystem to the Docker container. Assuming you've created a file called `input/my_query`:
+If you're having trouble getting dependencies installed, you can try Docker. Build the image locally by doing `docker build -t elevation_lookups .`. You can then use it by binding directories on your filesystem to the Docker container. Assuming you've created a file called `input/my_query`:
 
 ```
 docker run \
