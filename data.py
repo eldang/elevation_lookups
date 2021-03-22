@@ -32,15 +32,6 @@ NULL_ELEVATION: float = -11000  # deeper than the deepest ocean
 
 
 
-def pad_bounds(bounds: List[float], padding: float) -> List[float]:
-    return [
-        bounds[0] - padding,
-        bounds[1] - padding,
-        bounds[2] + padding,
-        bounds[3] + padding
-    ]
-
-
 
 class ElevationStats:
 
@@ -149,11 +140,6 @@ class DataSource:
             elif self.download_method == "ftp":
                 self.logger.info('Downloading %s as ftp', self.url)
                 print(ftp.urlretrieve(self.url, self.filename))
-            elif self.download_method == "srtm":
-                eio.clip(
-                    bounds=pad_bounds(bbox.bounds, 0.001),
-                    output=os.path.join(os.getcwd(), self.filename)
-                )
             elif self.download_method == "local":
                 self.logger.critical(
                     'Local file %s not found.',
@@ -190,6 +176,7 @@ class DataSource:
         ]
         for x in range(tiles[0], tiles[2]):
             for y in range(tiles[1], tiles[3]):
+                print(x, y)
                 filename = os.path.join(
                     os.getcwd(),
                     self.filename,
