@@ -23,18 +23,6 @@
 			"lookup_field": 1,
 			"units": "feet",
 			"recheck_interval_days": 100
-		},
-		{
-			"name": "SRTM Poundbury",
-			"url": null,
-			"filename": "srtm_poundbury.tif",
-			"crs": "EPSG:4326",
-			"bbox": [-3,50, -2,51],
-			"download_method": "local",
-			"lookup_method": "raster",
-			"lookup_field": 1,
-			"units": "metres",
-			"recheck_interval_days": null
 		}
 	]
 }
