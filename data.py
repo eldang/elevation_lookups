@@ -4,6 +4,7 @@
 
 import json
 import logging
+import math
 import os
 import time
 import urllib.request as ftp
@@ -11,9 +12,14 @@ import warnings
 
 import elevation as eio  # type: ignore
 # elevation is an SRTM downloader.  See https://github.com/bopen/elevation
+import fiona  # type: ignore  # noqa: F401
+# fiona is only used indirectly, but needs to be explicitly imported to avoid:
+# ` AttributeError: partially initialized module 'fiona' has no
+# attribute '_loading' (most likely due to a circular import) `
 import geopandas as gp  # type: ignore
 import pyproj
 import rasterio  # type: ignore
+import rasterio.merge  # type: ignore
 import requests
 
 from shapely.geometry import box, LineString, Point  # type: ignore
@@ -25,15 +31,6 @@ SCREEN_PRECISION: int = 2  # round terminal output to 1cm
 FOOT_IN_M: float = 0.3048
 NULL_ELEVATION: float = -11000  # deeper than the deepest ocean
 
-
-
-def pad_bounds(bounds: List[float], padding: float) -> List[float]:
-    return [
-        bounds[0] - padding,
-        bounds[1] - padding,
-        bounds[2] + padding,
-        bounds[3] + padding
-    ]
 
 
 
@@ -72,7 +69,6 @@ class DataSource:
         self.sources_file: str = data_source_list
 
         self.__choose_source__(bbox)
-        self.__download_file__(bbox)
         if self.lookup_method == "contour_lines":
             self.__read_vectors__(bbox)
         elif self.lookup_method == "raster":
@@ -90,8 +86,7 @@ class DataSource:
         with open(self.sources_file) as infile:
             sources = json.load(infile)["sources"]
 
-        # try to find an applicable source; quit if none found
-        source_found: bool = False
+        # try to find an applicable source
         for source in sources:
             if box(*source["bbox"]).contains(bbox):
                 self.name: str = source["name"]
@@ -106,17 +101,31 @@ class DataSource:
                 self.source_units: str = source["units"]
                 self.recheck_days: int = source["recheck_interval_days"]
                 self.logger.info('Using data source: %s', self.name)
-                source_found = True
-                break
+                self.__download_file__(bbox)
+                return
             else:
                 self.logger.debug(
                     ('Skipping data source "%s" because '
                         'it doesn`t cover the area needed.'),
                     source["name"]
                 )
-        if not source_found:
-            self.logger.critical('No applicable data sources found.')
-            exit(1)
+        # fall back to SRTM if no preferred source found
+        self.logger.info(
+            'No applicable data sources found in %s, defaulting to SRTM.',
+            self.sources_file
+        )
+        self.name = "SRTM 30m"
+        self.url = "https://lpdaac.usgs.gov/products/srtmgl1nv003/"
+        self.filename = os.path.join(os.getcwd(), self.data_dir, "srtm")
+        if not os.path.exists(self.filename):
+            os.mkdir(self.filename)
+        self.source_crs = "EPSG:4326"
+        self.download_method = "srtm"
+        self.lookup_method = "raster"
+        self.lookup_field = "1"
+        self.source_units = "meters"
+        self.recheck_days = 100
+        self.__download_srtm__(bbox)
 
 
     def __download_file__(self, bbox: box) -> None:
@@ -143,11 +152,6 @@ class DataSource:
             elif self.download_method == "ftp":
                 self.logger.info('Downloading %s as ftp', self.url)
                 print(ftp.urlretrieve(self.url, self.filename))
-            elif self.download_method == "srtm":
-                eio.clip(
-                    bounds=pad_bounds(bbox.bounds, 0.001),
-                    output=os.path.join(os.getcwd(), self.filename)
-                )
             elif self.download_method == "local":
                 self.logger.critical(
                     'Local file %s not found.',
@@ -164,6 +168,53 @@ class DataSource:
             self.logger.info('Data file already saved at %s', self.filename)
 
 
+    def __download_srtm__(self, bbox: box) -> None:
+        # make a list of file[s] needed
+        tiles: List[int] = [
+            math.floor(bbox.bounds[0]),
+            math.floor(bbox.bounds[1]),
+            math.ceil(bbox.bounds[2]),
+            math.ceil(bbox.bounds[3]),
+        ]
+        self.srtm_tiles: List[str] = []
+        for x in range(tiles[0], tiles[2]):
+            for y in range(tiles[1], tiles[3]):
+                self.srtm_tiles.append(os.path.join(
+                    self.filename,
+                    "srtm." + str(x) + "." + str(y) + ".tif"
+                ))
+        # download file[s] if appropriate
+        for filename in self.srtm_tiles:
+            file_needed: bool = True
+            if os.path.exists(filename):
+                age: float = time.time() - os.stat(filename).st_mtime
+                if age > self.recheck_days * 60 * 60 * 24:
+                    self.logger.info(
+                        'Replacing %s because it`s > than %s days old',
+                        filename,
+                        self.recheck_days
+                    )
+                else:
+                    file_needed = False
+                    self.logger.info('Tile already saved at %s', filename)
+            else:
+                self.logger.info('Downloading %s', filename)
+            if file_needed:
+                eio.clip(bounds=[x, y, x + 1, y + 1], output=filename)
+        # merge files to temp.tif on disk
+        self.filename = os.path.join(self.filename, "temp.tif")
+        self.logger.info(
+            'Saving SRTM data cropped to %s as %s',
+            bbox.bounds,
+            self.filename
+        )
+        rasterio.merge.merge(
+            self.srtm_tiles,
+            bounds=bbox.bounds,
+            dst_path=self.filename
+        )
+
+
     def __read_vectors__(self, bbox: box) -> None:
         self.logger.info('Loading %s as vector data', self.filename)
         gdf = gp.read_file(self.filename)
@@ -175,10 +226,7 @@ class DataSource:
             )
             gdf.to_crs(4326)
         # crop to bbox and standardise fields
-        self.logger.info(
-            'Cropping to %s',
-            [bbox.exterior.coords[0], bbox.exterior.coords[2]]
-        )
+        self.logger.info('Cropping to %s', bbox.bounds)
         self.gdf = gdf.loc[
             gdf.sindex.query(bbox),
             ["geometry", self.lookup_field]
