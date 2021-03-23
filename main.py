@@ -68,6 +68,7 @@ def main(
     outfile = OutputFile(__name__, output_dir, input_file)
     infile.process(d, outfile)
     outfile.close()
+    d.close()
     logger.info("Run complete in %s.", elapsedTime(start_time))
 
 

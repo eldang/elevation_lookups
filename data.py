@@ -202,7 +202,10 @@ class DataSource:
             if file_needed:
                 eio.clip(bounds=[x, y, x + 1, y + 1], output=filename)
         # merge files to temp.tif on disk
-        self.filename = os.path.join(self.filename, "temp.tif")
+        self.filename = os.path.join(
+            self.filename,
+            "temp_" + str(time.time_ns()) + ".tif"
+        )
         self.logger.info(
             'Saving SRTM data cropped to %s as %s',
             bbox.bounds,
@@ -355,6 +358,13 @@ class DataSource:
             # after the loop, we already have our final elevation
             stats.end = elevation
         return stats
+
+
+    def close(self) -> None:
+        if self.lookup_method == "raster":
+            self.raster_dataset.close()
+        if self.download_method == "srtm":
+            os.remove(self.filename)
 
 
     def __str__(self) -> str:
