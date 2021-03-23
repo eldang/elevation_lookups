@@ -71,8 +71,6 @@ class DataSource:
         self.__choose_source__(bbox)
         if self.lookup_method == "contour_lines":
             self.__read_vectors__(bbox)
-        elif self.download_method == "srtm":
-            self.__read_srtm__(bbox)
         elif self.lookup_method == "raster":
             self.__read_raster__(bbox)
         else:
@@ -116,7 +114,7 @@ class DataSource:
             'No applicable data sources found in %s, defaulting to SRTM.',
             self.sources_file
         )
-        self.__configure_srtm__(bbox)
+        self.__download_srtm__(bbox)
 
 
     def __download_file__(self, bbox: box) -> None:
@@ -159,7 +157,7 @@ class DataSource:
             self.logger.info('Data file already saved at %s', self.filename)
 
 
-    def __configure_srtm__(self, bbox: box) -> None:
+    def __download_srtm__(self, bbox: box) -> None:
         # hard-code some metadata
         self.name = "SRTM 30m"
         self.url = "https://lpdaac.usgs.gov/products/srtmgl1nv003/"
@@ -172,7 +170,7 @@ class DataSource:
         self.lookup_field = "1"
         self.source_units = "meters"
         self.recheck_days = 100
-        # download file[s] if appropriate
+        # make a list of file[s] needed
         tiles: List[int] = [
             math.floor(bbox.bounds[0]),
             math.floor(bbox.bounds[1]),
@@ -186,6 +184,7 @@ class DataSource:
                     self.filename,
                     "srtm." + str(x) + "." + str(y) + ".tif"
                 ))
+        # download file[s] if appropriate
         for filename in self.srtm_tiles:
             file_needed: bool = True
             if os.path.exists(filename):
@@ -203,6 +202,14 @@ class DataSource:
                 self.logger.info('Downloading %s', filename)
             if file_needed:
                 eio.clip(bounds=[x, y, x + 1, y + 1], output=filename)
+        self.logger.info('Loading SRTM raster data cropped to %s', bbox.bounds)
+        # merge files to temp.tif on disk
+        self.filename = os.path.join(self.filename, "temp.tif")
+        rasterio.merge.merge(
+            self.srtm_tiles,
+            bounds=bbox.bounds,
+            dst_path=self.filename
+        )
 
 
     def __read_vectors__(self, bbox: box) -> None:
@@ -216,10 +223,7 @@ class DataSource:
             )
             gdf.to_crs(4326)
         # crop to bbox and standardise fields
-        self.logger.info(
-            'Cropping to %s',
-            [bbox.exterior.coords[0], bbox.exterior.coords[2]]
-        )
+        self.logger.info('Cropping to %s', bbox.bounds)
         self.gdf = gdf.loc[
             gdf.sindex.query(bbox),
             ["geometry", self.lookup_field]
@@ -239,25 +243,6 @@ class DataSource:
             )
         self.logger.info("Creating spatial index")
         self.idx = self.gdf.sindex
-
-
-    def __read_srtm__(self, bbox: box) -> None:
-        self.logger.info(
-            'Loading SRTM raster data cropped to %s',
-            [bbox.exterior.coords[0], bbox.exterior.coords[2]]
-        )
-        self.filename = os.path.join(self.filename, "temp.tif")
-        print(self.filename)
-        print(self.srtm_tiles)
-        print(bbox.bounds)
-        rasterio.merge.merge(
-            self.srtm_tiles,
-            bounds=bbox.bounds,
-            dst_path=self.filename
-        )
-        self.raster_dataset = rasterio.open(self.filename)
-        self.raster_values = self.raster_dataset.read(int(self.lookup_field))
-        print(self.raster_values)
 
 
     def __read_raster__(self, bbox: box) -> None:
