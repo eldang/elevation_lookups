@@ -202,9 +202,13 @@ class DataSource:
                 self.logger.info('Downloading %s', filename)
             if file_needed:
                 eio.clip(bounds=[x, y, x + 1, y + 1], output=filename)
-        self.logger.info('Loading SRTM raster data cropped to %s', bbox.bounds)
         # merge files to temp.tif on disk
         self.filename = os.path.join(self.filename, "temp.tif")
+        self.logger.info(
+            'Saving SRTM data cropped to %s as %s',
+            bbox.bounds,
+            self.filename
+        )
         rasterio.merge.merge(
             self.srtm_tiles,
             bounds=bbox.bounds,
