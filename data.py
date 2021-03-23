@@ -114,6 +114,17 @@ class DataSource:
             'No applicable data sources found in %s, defaulting to SRTM.',
             self.sources_file
         )
+        self.name = "SRTM 30m"
+        self.url = "https://lpdaac.usgs.gov/products/srtmgl1nv003/"
+        self.filename = os.path.join(os.getcwd(), self.data_dir, "srtm")
+        if not os.path.exists(self.filename):
+            os.mkdir(self.filename)
+        self.source_crs = "EPSG:4326"
+        self.download_method = "srtm"
+        self.lookup_method = "raster"
+        self.lookup_field = "1"
+        self.source_units = "meters"
+        self.recheck_days = 100
         self.__download_srtm__(bbox)
 
 
@@ -158,18 +169,6 @@ class DataSource:
 
 
     def __download_srtm__(self, bbox: box) -> None:
-        # hard-code some metadata
-        self.name = "SRTM 30m"
-        self.url = "https://lpdaac.usgs.gov/products/srtmgl1nv003/"
-        self.filename = os.path.join(os.getcwd(), self.data_dir, "srtm")
-        if not os.path.exists(self.filename):
-            os.mkdir(self.filename)
-        self.source_crs = "EPSG:4326"
-        self.download_method = "srtm"
-        self.lookup_method = "raster"
-        self.lookup_field = "1"
-        self.source_units = "meters"
-        self.recheck_days = 100
         # make a list of file[s] needed
         tiles: List[int] = [
             math.floor(bbox.bounds[0]),
