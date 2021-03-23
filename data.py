@@ -81,6 +81,14 @@ class DataSource:
             exit(1)
 
 
+    def __enter__(self):
+        return self
+
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.close()
+
+
     def __choose_source__(self, bbox: box) -> None:
         # load available sources from metadata JSON
         with open(self.sources_file) as infile:
@@ -202,9 +210,11 @@ class DataSource:
             if file_needed:
                 eio.clip(bounds=[x, y, x + 1, y + 1], output=filename)
         # merge files to temp.tif on disk
+        tile_id: str = str(tiles[0]) + "_" + str(tiles[1])
+        tile_id += "_" + str(tiles[2]) + "_" + str(tiles[3])
         self.filename = os.path.join(
             self.filename,
-            "temp_" + str(time.time_ns()) + ".tif"
+            "temp_" + tile_id + "_" + str(time.time()) + ".tif"
         )
         self.logger.info(
             'Saving SRTM data cropped to %s as %s',
@@ -364,6 +374,7 @@ class DataSource:
         if self.lookup_method == "raster":
             self.raster_dataset.close()
         if self.download_method == "srtm":
+            self.logger.info('Removing temp data file %s', self.filename)
             os.remove(self.filename)
 
 

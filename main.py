@@ -64,11 +64,9 @@ def main(
     logger.setLevel(level=log)
     logger.debug("Starting run")
     infile = InputFile(__name__, input_dir, input_file)
-    d = DataSource(__name__, data_dir, data_source_list, infile.bbox())
-    outfile = OutputFile(__name__, output_dir, input_file)
-    infile.process(d, outfile)
-    outfile.close()
-    d.close()
+    with DataSource(__name__, data_dir, data_source_list, infile.bbox()) as d:
+        with OutputFile(__name__, output_dir, input_file) as outfile:
+            infile.process(d, outfile)
     logger.info("Run complete in %s.", elapsedTime(start_time))
 
 
