@@ -48,21 +48,21 @@ The output should appear in your local `output` directory.
 
 By default, this project will use SRTM data to look up elevations.  This dataset has the advantage of global availability and ease of use, but it is limited by a coarse pixel size and 1m vertical resolution.  The pixel size between 56S and 60N is 0.00027̅°, which equates to 30m E-W at the equator and 15m E-W at 60N, and 30m N-S at any latitude.  In theory, the pixels triple in size at latitudes outside the range (56S, 60N), though in testing we are still finding 0.00027̅° pixels for Anchorage, Alaska, USA (> 61N).
 
-It is also possible to configure locally preferred data sources.  See [#adding-or-editing-data-sources](below) for details on how to do so.  These are the available types and examples that are preconfigured in this project:
+It is also possible to configure locally preferred data sources.  See [below](#adding-or-editing-data-sources) for details on how to do so.  These are the available types and examples that are preconfigured in this project:
 
 ### Contour lines
 
-Data files may be in any of the [https://gdal.org/drivers/vector/index.html](vector formats supported by GDAL), though note that for formats not marked as "Built-in by default" you may need to install additional prerequisites.  All common vector formats are supported by default.
+Data files may be in any of the [vector formats supported by GDAL](https://gdal.org/drivers/vector/index.html), though note that for formats not marked as "Built-in by default" you may need to install additional prerequisites.  All common vector formats are supported by default.
 
-The enclosed [datasources.json](datasources.json) sets up [https://data-seattlecitygis.opendata.arcgis.com/datasets/contour-lines-1993](Seattle's open 2ft contour dataset) as an example.
+The enclosed [datasources.json](datasources.json) sets up [Seattle's open 2ft contour dataset](https://data-seattlecitygis.opendata.arcgis.com/datasets/contour-lines-1993) as an example.
 
 **Important note**: a point's elevation is taken only from the nearest contour to it, with no attempt to interpolate.  This works well for 2ft contours in a hilly area, but may become a significant source of error for flatter regions or more widely spaced contours.
 
 ### Raster elevation data
 
-Data files may be in any of the [https://gdal.org/drivers/raster/index.html](raster formats supported by GDAL), though note that for formats not marked as "Built-in by default" you may need to install additional prerequisites.  All common raster formats are supported by default.
+Data files may be in any of the [raster formats supported by GDAL](https://gdal.org/drivers/raster/index.html), though note that for formats not marked as "Built-in by default" you may need to install additional prerequisites.  All common raster formats are supported by default.
 
-The enclosed [datasources.json](datasources.json) sets up "Delivery 1" from the Puget Sound LiDAR Consortium's [http://pugetsoundlidar.ess.washington.edu/lidardata/restricted/projects/2016king_county.html](2016 King County data) as an example.  It covers Seattle as well as some additional area S and E of Seattle.  Because it is defined after the Seattle 2ft contours, the contour dataset is used if it covers the required area, falling back to this LIDAR set for input files that are covered by it but not the contours.
+The enclosed [datasources.json](datasources.json) sets up "Delivery 1" from the Puget Sound LiDAR Consortium's [2016 King County data](http://pugetsoundlidar.ess.washington.edu/lidardata/restricted/projects/2016king_county.html) as an example.  It covers Seattle as well as some additional area S and E of Seattle.  Because it is defined after the Seattle 2ft contours, the contour dataset is used if it covers the required area, falling back to this LIDAR set for input files that are covered by it but not the contours.
 
 ## Input format
 
@@ -86,7 +86,7 @@ Data sources are defined in [datasources.json](datasources.json).  The order of 
 
 * `name`: a name for human readability
 * `url`: URL to download data from; if using a file that's already saved locally this field can be set to `null` or used to note the original source
-* `filename`: a filename to save a local copy as, into the data/ directory
+* `filename`: a filename to save a local copy as, into the data/ directory, or at which to find a pre-saved local copy
 *	`crs`: the coordinate reference system of the original data file as a string in the format "EPSG:4326".  Any CRS that PROJ can handle works; files will be converted to EPSG:4326 on loading if they aren't already in that
 * `bbox`: WSEN coordinates for the area covered by this file
 * `download_method`: how to obtain the file.  Currently supported values:
