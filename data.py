@@ -159,7 +159,7 @@ class DataSource:
                     outfile.write(req.content)
             elif self.download_method == "ftp":
                 self.logger.info('Downloading %s as ftp', self.url)
-                print(ftp.urlretrieve(self.url, self.filename))
+                ftp.urlretrieve(self.url, self.filename)
             elif self.download_method == "local":
                 self.logger.critical(
                     'Local file %s not found.',
