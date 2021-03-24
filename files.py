@@ -43,6 +43,12 @@ class OutputFile:
         self.f.write(str(round(data.descent, SAVE_PRECISION)))
         self.f.write('\n')
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.close()
+
     def close(self) -> None:
         self.f.close()
 
