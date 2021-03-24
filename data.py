@@ -209,7 +209,7 @@ class DataSource:
                 self.logger.info('Downloading %s', filename)
             if file_needed:
                 eio.clip(bounds=[x, y, x + 1, y + 1], output=filename)
-        # merge files to temp.tif on disk
+        # merge files to temp.....tif on disk
         tile_id: str = str(tiles[0]) + "_" + str(tiles[1])
         tile_id += "_" + str(tiles[2]) + "_" + str(tiles[3])
         self.filename = os.path.join(
