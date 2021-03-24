@@ -8,7 +8,7 @@ from typing import List, Tuple
 
 from shapely.geometry import box, LineString, MultiLineString  # type: ignore
 
-from data import DataSource, ElevationStats
+from data import DataSource, ElevationStats, NULL_ELEVATION
 
 
 
@@ -34,13 +34,15 @@ class OutputFile:
         self.f = open(self.file_path, 'w')
 
     def write_elevations(self, data: ElevationStats) -> None:
-        self.f.write(str(round(data.start, SAVE_PRECISION)))
-        self.f.write('\t')
-        self.f.write(str(round(data.end, SAVE_PRECISION)))
-        self.f.write('\t')
-        self.f.write(str(round(data.climb, SAVE_PRECISION)))
-        self.f.write('\t')
-        self.f.write(str(round(data.descent, SAVE_PRECISION)))
+        # skip NULL returns
+        if data.start != NULL_ELEVATION and data.end != NULL_ELEVATION:
+            self.f.write(str(round(data.start, SAVE_PRECISION)))
+            self.f.write('\t')
+            self.f.write(str(round(data.end, SAVE_PRECISION)))
+            self.f.write('\t')
+            self.f.write(str(round(data.climb, SAVE_PRECISION)))
+            self.f.write('\t')
+            self.f.write(str(round(data.descent, SAVE_PRECISION)))
         self.f.write('\n')
 
     def __enter__(self):

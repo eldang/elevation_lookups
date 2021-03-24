@@ -350,6 +350,14 @@ class DataSource:
         stats = ElevationStats()
         # Find the elevation of the first point
         stats.start = self.__raster_point_lookup__(Point(line.coords[0]))
+        # deal with nodata returns
+        while stats.start <= NULL_ELEVATION:
+            if len(line.coords) <= 1:
+                return ElevationStats()
+            line.coords = line.coords[1:]
+            stats.start = self.__raster_point_lookup__(
+                Point(line.coords[0])
+            )
         # if we only have one point then we're set
         if (len(line.coords) == 1) or (
             (len(line.coords) == 2) and (line.coords[0] == line.coords[-1])
@@ -360,11 +368,12 @@ class DataSource:
             previous_elevation: float = stats.start
             for coord in line.coords[1:]:
                 elevation: float = self.__raster_point_lookup__(Point(coord))
-                if elevation > previous_elevation:
-                    stats.climb += elevation - previous_elevation
-                elif elevation < previous_elevation:
-                    stats.descent += previous_elevation - elevation
-                previous_elevation = elevation
+                if elevation > NULL_ELEVATION:
+                    if elevation > previous_elevation:
+                        stats.climb += elevation - previous_elevation
+                    elif elevation < previous_elevation:
+                        stats.descent += previous_elevation - elevation
+                    previous_elevation = elevation
             # after the loop, we already have our final elevation
             stats.end = elevation
         return stats
