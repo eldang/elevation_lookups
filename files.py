@@ -83,13 +83,7 @@ class InputFile:
             coords.append((vals[0], vals[1]))
         return LineString(coords)
 
-    def process(
-        self,
-        d: DataSource,
-        outfile: OutputFile,
-        n_threads: int
-    ) -> None:
-        self.logger.debug('Processing with %s threads', n_threads)
+    def process(self, d: DataSource, outfile: OutputFile) -> None:
         for line in self.__paths:
             vals: ElevationStats = d.process(line)
             outfile.write_elevations(vals)
