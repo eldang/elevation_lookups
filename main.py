@@ -37,12 +37,6 @@ __license__ = "Apache"
             'or leave out for default value: "datasources.json"')
 )
 @click.option(
-    '--n_threads',
-    default=5,
-    help=('Number of threads to execute in parallel, '
-            'or leave out for default value: 5')
-)
-@click.option(
     '--log',
     type=click.Choice(
         ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
@@ -59,7 +53,6 @@ def main(
     output_dir: str,
     data_source_list: str,
     input_file: str,
-    n_threads: int,
     log: str
 ) -> None:
     start_time: float = time.time()
@@ -73,7 +66,7 @@ def main(
     infile = InputFile(__name__, input_dir, input_file)
     with DataSource(__name__, data_dir, data_source_list, infile.bbox()) as d:
         with OutputFile(__name__, output_dir, input_file) as outfile:
-            infile.process(d, outfile, n_threads)
+            infile.process(d, outfile)
     logger.info("Run complete in %s.", elapsedTime(start_time))
 
 

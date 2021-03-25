@@ -8,6 +8,7 @@ This is intended as a way of addressing https://github.com/a-b-street/abstreet/i
 
 This utility is being developed and tested in Python 3.9.2 on a Mac, and should in theory work with older versions of Python 3.  Before installing the modules listed in [requirements.txt](requirements.txt), make sure the following are present in the environment in which it will run:
 
+* [GDAL](https://www.gdal.org/), tested with version 3.2.1, should in theory work with any version >= 3.0.4.
 * [GEOS](https://trac.osgeo.org/geos), tested with versions 3.6.2 & 3.9.1, should in theory work with any version >= 3.3.9.
 * [PROJ](https://proj.org/), tested with versions 7.2.1 & 8.0.0, should in theory work with any version >= 7.2.0.
 
@@ -16,14 +17,6 @@ Then install the Python modules with:
 `pip3 install -r requirements.txt --no-binary pygeos --no-binary shapely`
 
 to make sure that they are built with the exact versions of the above dependencies that are present in the environment.  This makes spatial lookups significantly faster.
-
-#### Special note on dependencies
-
-In theory, this project should also have the following dependency, because [rasterio needs it to build](https://rasterio.readthedocs.io/en/latest/installation.html#dependencies):
-
-* [GDAL](https://www.gdal.org/), tested with version 3.2.1, should in theory work with any version >= 1.11.
-
-However, in practice installing rasterio via [requirements.txt](requirements.txt) without the `--no-binary` flag works without having GDAL installed, and at the time of writing everything that this project does with rasterio works without GDAL present in the environment.  I am leaving this note here in case future work makes GDAL necessary again.
 
 ### Docker
 
@@ -79,6 +72,8 @@ Some things to note:
 * Any non-zero `total_descent` is expressed as a positive value, i.e. a path that descends by 1 metre will have a value of 1
 * `total_climb` and `total_descent` include intermediate ups and downs along the path, so it is not unusual for both to be non-zero, and in that case one of them will be larger than the difference between `start_elevation` and `end_elevation`
 * (`start_elevation` - `end_elevation` + `total_climb` - `total_descent`) should always be within 1mm of 0.
+* If the utility is unable to find elevations for any of the points in a given input line, it will write a blank line to the output file.
+* If the utility is able to find elevations for some but not all of the points in an input line, it will assume that the missing points have the same elevation as their neighbours.
 
 ## Adding or editing data sources
 
