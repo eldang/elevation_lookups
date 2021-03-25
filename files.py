@@ -85,16 +85,15 @@ class InputFile:
             coords.append((vals[0], vals[1]))
         return LineString(coords)
 
-    def process(
+    def tag_elevations(
         self,
         d: DataSource,
         outfile: OutputFile,
         n_threads: int
     ) -> None:
-        self.logger.debug('Processing with %s threads', n_threads)
-        for line in self.__paths:
-            vals: ElevationStats = d.process(line)
-            outfile.write_elevations(vals)
+        vals: List[ElevationStats] = d.tag_multiline(self.__paths, n_threads)
+        for row in sorted(vals, key=lambda x: x.i):
+            outfile.write_elevations(row)
 
     def bbox(self) -> box:
         return box(*self.__paths.bounds)

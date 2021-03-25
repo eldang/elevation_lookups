@@ -40,7 +40,7 @@ __license__ = "Apache"
     '--n_threads',
     default=5,
     help=('Number of threads to execute in parallel, '
-            'or leave out for default value: 5')
+            'or leave out for default value: 5')  # noqa: E127
 )
 @click.option(
     '--log',
@@ -73,7 +73,7 @@ def main(
     infile = InputFile(__name__, input_dir, input_file)
     with DataSource(__name__, data_dir, data_source_list, infile.bbox()) as d:
         with OutputFile(__name__, output_dir, input_file) as outfile:
-            infile.process(d, outfile, n_threads)
+            infile.tag_elevations(d, outfile, n_threads)
     logger.info("Run complete in %s.", elapsedTime(start_time))
 
 

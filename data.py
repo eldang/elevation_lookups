@@ -22,7 +22,7 @@ import rasterio  # type: ignore
 import rasterio.merge  # type: ignore
 import requests
 
-from shapely.geometry import box, LineString, Point  # type: ignore
+from shapely.geometry import box, LineString, MultiLineString, Point  # type: ignore  # noqa: E501
 from shapely.ops import transform  # type: ignore
 from typing import List
 
@@ -36,7 +36,8 @@ NULL_ELEVATION: float = -11000  # deeper than the deepest ocean
 
 class ElevationStats:
 
-    def __init__(self) -> None:
+    def __init__(self, i: int = -1) -> None:
+        self.i: int = i
         self.start: float = NULL_ELEVATION
         self.end: float = NULL_ELEVATION
         self.climb: float = 0
@@ -44,6 +45,7 @@ class ElevationStats:
 
     def __str__(self) -> str:
         return " \t".join([
+            'row: ' + str(self.i),
             'Starting elevation: ' +
             str(round(self.start, SCREEN_PRECISION)),
             'Ending elevation: ' +
@@ -275,11 +277,23 @@ class DataSource:
             ).transform
 
 
-    def process(self, line: LineString) -> ElevationStats:
+    def tag_multiline(
+        self,
+        lines: MultiLineString,
+        n_threads: int
+    ) -> List[ElevationStats]:
+        self.logger.debug('Processing with %s threads', n_threads)
+        vals: List[ElevationStats] = []
+        for i in range(len(lines)):
+            vals.append(self.tag_line(lines[i], i))
+        return vals
+
+
+    def tag_line(self, line: LineString, i: int) -> ElevationStats:
         if self.lookup_method == "contour_lines":
-            return self.__contour_line_crossings__(line)
+            return self.__contour_line_crossings__(line, i)
         elif self.lookup_method == "raster":
-            return self.__raster_line_lookups__(line)
+            return self.__raster_line_lookups__(line, i)
         else:
             self.logger.critical(
                 "Lookup method %s is not defined",
@@ -312,8 +326,12 @@ class DataSource:
         return self.gdf.loc[distances.idxmin()]["elevation"]
 
 
-    def __contour_line_crossings__(self, line: LineString) -> ElevationStats:
-        stats = ElevationStats()
+    def __contour_line_crossings__(
+        self,
+        line: LineString,
+        i: int
+    ) -> ElevationStats:
+        stats = ElevationStats(i)
         # Find the elevation of the first point
         stats.start = self.__nearest_contour__(Point(line.coords[0]))
         # if we only have one point then we're set
@@ -345,9 +363,12 @@ class DataSource:
         return self.raster_values[row, col]
 
 
-
-    def __raster_line_lookups__(self, line: LineString) -> ElevationStats:
-        stats = ElevationStats()
+    def __raster_line_lookups__(
+        self,
+        line: LineString,
+        i: int
+    ) -> ElevationStats:
+        stats = ElevationStats(i)
         # Find the elevation of the first point
         stats.start = self.__raster_point_lookup__(Point(line.coords[0]))
         # deal with nodata returns
