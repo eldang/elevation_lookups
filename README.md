@@ -72,6 +72,8 @@ Some things to note:
 * Any non-zero `total_descent` is expressed as a positive value, i.e. a path that descends by 1 metre will have a value of 1
 * `total_climb` and `total_descent` include intermediate ups and downs along the path, so it is not unusual for both to be non-zero, and in that case one of them will be larger than the difference between `start_elevation` and `end_elevation`
 * (`start_elevation` - `end_elevation` + `total_climb` - `total_descent`) should always be within 1mm of 0.
+* If the utility is unable to find elevations for any of the points in a given input line, it will write a blank line to the output file.
+* If the utility is able to find elevations for some but not all of the points in an input line, it will assume that the missing points have the same elevation as their neighbours.
 
 ## Adding or editing data sources
 
