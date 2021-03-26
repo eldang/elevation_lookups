@@ -299,7 +299,8 @@ class DataSource:
                 if self.lookup_method == "contour_lines":
                     mp.Process(
                         target=self.__parallel_contour_worker__,
-                        args=(q, out, i, self.logger.getEffectiveLevel())
+                        args=(q, out, i, self.logger.getEffectiveLevel()),
+                        daemon=True
                     ).start()
                 elif self.lookup_method == "raster":
                     mp.Process(
@@ -310,7 +311,8 @@ class DataSource:
                             box(*lines.bounds),
                             i,
                             self.logger.getEffectiveLevel()
-                        )
+                        ),
+                        daemon=True
                     ).start()
             q.join()
             self.logger.debug("Parallel processing complete")
