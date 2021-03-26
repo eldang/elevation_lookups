@@ -279,26 +279,10 @@ class DataSource:
         lines: MultiLineString,
         n_threads: int
     ) -> List[ElevationStats]:
-        vals: List[ElevationStats] = []
         # allow multiprocessing to be sidestepped so there's always an
         # option for simple, sequential runs for debugging purposes
         if n_threads == 1:
-            self.logger.info('Processing singlethreaded.')
-            if self.lookup_method == "contour_lines":
-                self.logger.info("Creating spatial index")
-                self.idx = self.gdf.sindex
-                self.logger.info("Deriving elevations from contours")
-                for i in range(len(lines)):
-                    vals.append(self.__contour_line_crossings__(
-                        lines[i], i)
-                    )
-            elif self.lookup_method == "raster":
-                self.logger.info('Loading %s as raster data', self.filename)
-                self.__read_raster__(box(*lines.bounds))
-                for i in range(len(lines)):
-                    vals.append(self.__raster_line_lookups__(lines[i], i))
-                self.raster_dataset.close()
-            return vals
+            return self.__serial_worker__(lines)
         else:
             self.logger.info('Spawning %s threads', n_threads)
             q: mp.JoinableQueue = mp.JoinableQueue()  # for processing
@@ -331,10 +315,34 @@ class DataSource:
             q.join()
             self.logger.debug("Parallel processing complete")
             # collect all the output into one list
+            vals: List[ElevationStats] = []
             while not out.empty():
                 vals.append(out.get())
             # output order is not guaranteed, so sort it on returning
             return sorted(vals, key=lambda x: x.i)
+
+
+    def __serial_worker__(
+        self,
+        lines: MultiLineString
+    ) -> List[ElevationStats]:
+        vals: List[ElevationStats] = []
+        self.logger.info('Processing singlethreaded.')
+        if self.lookup_method == "contour_lines":
+            self.logger.info("Creating spatial index")
+            self.idx = self.gdf.sindex
+            self.logger.info("Deriving elevations from contours")
+            for i in range(len(lines)):
+                vals.append(self.__contour_line_crossings__(
+                    lines[i], i)
+                )
+        elif self.lookup_method == "raster":
+            self.logger.info('Loading %s as raster data', self.filename)
+            self.__read_raster__(box(*lines.bounds))
+            for i in range(len(lines)):
+                vals.append(self.__raster_line_lookups__(lines[i], i))
+            self.raster_dataset.close()
+        return vals
 
 
     def __parallel_contour_worker__(
