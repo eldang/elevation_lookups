@@ -25,7 +25,7 @@ import requests
 
 from shapely.geometry import box, LineString, MultiLineString, Point  # type: ignore  # noqa: E501
 from shapely.ops import transform  # type: ignore
-from typing import List
+from typing import List, Tuple
 
 
 SCREEN_PRECISION: int = 2  # round terminal output to 1cm
@@ -278,11 +278,11 @@ class DataSource:
         self,
         lines: MultiLineString,
         n_threads: int
-    ) -> List[ElevationStats]:
+    ) -> Tuple[List[ElevationStats], List[mp.Process]]:
         # allow multiprocessing to be sidestepped so there's always an
         # option for simple, sequential runs for debugging purposes
         if n_threads == 1:
-            return self.__serial_worker__(lines)
+            return (self.__serial_worker__(lines), [])
         else:
             self.logger.info('Spawning %s threads', n_threads)
             q: mp.JoinableQueue = mp.JoinableQueue()  # for processing
@@ -294,16 +294,17 @@ class DataSource:
                     "i": i
                 })
             # start an appropriate number of workers
+            workers: List[mp.Process] = []
             for i in range(n_threads):
                 self.logger.debug("Spawning thread %s", i)
                 if self.lookup_method == "contour_lines":
-                    mp.Process(
+                    workers.append(mp.Process(
                         target=self.__parallel_contour_worker__,
                         args=(q, out, i, self.logger.getEffectiveLevel()),
                         daemon=True
-                    ).start()
+                    ))
                 elif self.lookup_method == "raster":
-                    mp.Process(
+                    workers.append(mp.Process(
                         target=self.__parallel_raster_worker__,
                         args=(
                             q,
@@ -313,15 +314,25 @@ class DataSource:
                             self.logger.getEffectiveLevel()
                         ),
                         daemon=True
-                    ).start()
+                    ))
+                workers[i].start()
             q.join()
-            self.logger.debug("Parallel processing complete")
             # collect all the output into one list
             vals: List[ElevationStats] = []
-            while not out.empty():
+            while len(vals) != len(lines):
+                wait: float = 0.1
+                while(out.empty()):
+                    self.logger.debug(
+                        "Waiting %s seconds for %s more lines of data",
+                        wait,
+                        len(lines) - len(vals)
+                    )
+                    time.sleep(wait)
+                    wait *= 2
                 vals.append(out.get())
+            self.logger.debug("Parallel processing complete")
             # output order is not guaranteed, so sort it on returning
-            return sorted(vals, key=lambda x: x.i)
+            return (sorted(vals, key=lambda x: x.i), workers)
 
 
     def __serial_worker__(

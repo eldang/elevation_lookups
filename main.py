@@ -3,6 +3,7 @@
 # Look up elevation data for a batch of paths
 
 import logging
+import sys
 import time
 
 import click
@@ -75,6 +76,7 @@ def main(
         with OutputFile(__name__, output_dir, input_file) as outfile:
             infile.tag_elevations(d, outfile, n_threads)
     logger.info("Run complete in %s.", elapsedTime(start_time))
+    sys.exit(0)
 
 
 
