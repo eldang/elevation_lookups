@@ -92,7 +92,7 @@ class InputFile:
         n_threads: int
     ) -> None:
         vals: List[ElevationStats] = d.tag_multiline(self.__paths, n_threads)
-        for row in sorted(vals, key=lambda x: x.i):
+        for row in vals:
             outfile.write_elevations(row)
 
     def bbox(self) -> box:

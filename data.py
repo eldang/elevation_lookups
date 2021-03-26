@@ -282,11 +282,17 @@ class DataSource:
         lines: MultiLineString,
         n_threads: int
     ) -> List[ElevationStats]:
-        self.logger.debug('Processing with %s threads', n_threads)
         vals: List[ElevationStats] = []
-        for i in range(len(lines)):
-            vals.append(self.tag_line(lines[i], i))
-        return vals
+        if n_threads == 1:
+            self.logger.debug('Processing singlethreaded.')
+            for i in range(len(lines)):
+                vals.append(self.tag_line(lines[i], i))
+            return vals
+        else:
+            self.logger.debug('Processing with %s threads', n_threads)
+            for i in range(len(lines)):
+                vals.append(self.tag_line(lines[i], i))
+            return sorted(vals, key=lambda x: x.i)
 
 
     def tag_line(self, line: LineString, i: int) -> ElevationStats:
