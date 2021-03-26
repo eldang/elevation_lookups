@@ -59,7 +59,7 @@ The enclosed [datasources.json](datasources.json) sets up "Delivery 1" from the 
 
 ## Input format
 
-A text file in which each row is one path, and each row consists of tab-separated x,y coordinate pairs in order to describe a path, in unprojected decimal degrees.
+A text file in which each row is one path, and each row consists of tab-separated x,y coordinate pairs in order to describe a path, in unprojected decimal degrees.  The file should contain no blank lines until the end, as input parsing will stop at the first blank line it encounters.
 
 ## Output format
 
