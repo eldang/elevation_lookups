@@ -3,7 +3,6 @@
 # file handlers and objects
 
 import logging
-import multiprocessing as mp
 import os
 from typing import List, Tuple
 
@@ -97,19 +96,11 @@ class InputFile:
         outfile: OutputFile,
         n_threads: int
     ) -> None:
-        returns: Tuple = d.tag_multiline(self.__paths, n_threads)
-        vals: List[ElevationStats] = returns[0]
-        workers: List[mp.Process] = returns[1]
+        vals: List[ElevationStats] = d.tag_multiline(self.__paths, n_threads)
         self.logger.info("Writing output to %s", outfile)
         for row in vals:
             outfile.write_elevations(row)
-        # clean up child processes
-        for i in range(n_threads):
-            if workers[i].is_alive():
-                workers[i].terminate()
-        for i in range(n_threads):
-            workers[i].join()
-            workers[i].close()
+
 
     def bbox(self) -> box:
         return box(*self.__paths.bounds)

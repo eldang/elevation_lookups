@@ -25,7 +25,7 @@ import requests
 
 from shapely.geometry import box, LineString, MultiLineString, Point  # type: ignore  # noqa: E501
 from shapely.ops import transform  # type: ignore
-from typing import List, Tuple
+from typing import List
 
 
 SCREEN_PRECISION: int = 2  # round terminal output to 1cm
@@ -278,11 +278,11 @@ class DataSource:
         self,
         lines: MultiLineString,
         n_threads: int
-    ) -> Tuple[List[ElevationStats], List[mp.Process]]:
+    ) -> List[ElevationStats]:
         # allow multiprocessing to be sidestepped so there's always an
         # option for simple, sequential runs for debugging purposes
         if n_threads == 1:
-            return (self.__serial_worker__(lines), [])
+            return self.__serial_worker__(lines)
         else:
             self.logger.info('Spawning %s threads', n_threads)
             q: mp.JoinableQueue = mp.JoinableQueue()  # for processing
@@ -323,16 +323,23 @@ class DataSource:
                 wait: float = 0.1
                 while(out.empty()):
                     self.logger.debug(
-                        "Waiting %s seconds for %s more lines of data",
+                        "Pausing %s seconds for %s more lines of data",
                         wait,
                         len(lines) - len(vals)
                     )
                     time.sleep(wait)
                     wait *= 2
                 vals.append(out.get())
+            # clean up child processes
+            for i in range(n_threads):
+                if workers[i].is_alive():
+                    workers[i].terminate()
+            for i in range(n_threads):
+                workers[i].join()
+                workers[i].close()
             self.logger.debug("Parallel processing complete")
             # output order is not guaranteed, so sort it on returning
-            return (sorted(vals, key=lambda x: x.i), workers)
+            return sorted(vals, key=lambda x: x.i)
 
 
     def __serial_worker__(
