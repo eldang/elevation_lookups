@@ -73,7 +73,7 @@ class InputFile:
         lines: List[LineString] = []
         with open(self.file_path) as f:
             for row in f:
-                if row == '\n':
+                if row.strip() == '':
                     break
                 lines.append(self.__build_line__(row))
         self.__paths = MultiLineString(lines)
