@@ -75,9 +75,7 @@ class DataSource:
         self.__choose_source__(bbox)
         if self.lookup_method == "contour_lines":
             self.__read_vectors__(bbox)
-        elif self.lookup_method == "raster":
-            self.__read_raster__(bbox)
-        else:
+        elif self.lookup_method != "raster":
             self.logger.critical(
                 "Lookup method %s not implemented",
                 self.lookup_method
@@ -264,7 +262,6 @@ class DataSource:
 
 
     def __read_raster__(self, bbox: box) -> None:
-        self.logger.info('Loading %s as raster data', self.filename)
         self.raster_dataset = rasterio.open(self.filename)
         self.raster_values = self.raster_dataset.read(int(self.lookup_field))
         # instead of reprojecting a raster,
@@ -296,36 +293,46 @@ class DataSource:
                         lines[i], i)
                     )
             elif self.lookup_method == "raster":
+                self.logger.info('Loading %s as raster data', self.filename)
+                self.__read_raster__(box(*lines.bounds))
                 for i in range(len(lines)):
                     vals.append(self.__raster_line_lookups__(lines[i], i))
+                self.raster_dataset.close()
             return vals
         else:
             self.logger.info('Spawning %s threads', n_threads)
             q: mp.JoinableQueue = mp.JoinableQueue()  # for processing
             out: mp.Queue = mp.Queue()  # to collect output
-            if self.lookup_method == "contour_lines":
-                # put each line into the queue
-                for i in range(len(lines)):
-                    q.put({
-                        "line": lines[i],
-                        "i": i
-                    })
-                # start an appropriate number of workers
-                for i in range(n_threads):
-                    self.logger.debug("Spawning thread %s", i)
-                    worker = mp.Process(
+            # put each line into the queue
+            for i in range(len(lines)):
+                q.put({
+                    "line": lines[i],
+                    "i": i
+                })
+            # start an appropriate number of workers
+            for i in range(n_threads):
+                self.logger.debug("Spawning thread %s", i)
+                if self.lookup_method == "contour_lines":
+                    mp.Process(
                         target=self.__parallel_contour_worker__,
                         args=(q, out, i, self.logger.getEffectiveLevel())
-                    )
-                    worker.start()
-                q.join()
-                self.logger.debug("Parallel processing complete")
-                # collect all the output into one list
-                while not out.empty():
-                    vals.append(out.get())
-            elif self.lookup_method == "raster":
-                for i in range(len(lines)):
-                    vals.append(self.__raster_line_lookups__(lines[i], i))
+                    ).start()
+                elif self.lookup_method == "raster":
+                    mp.Process(
+                        target=self.__parallel_raster_worker__,
+                        args=(
+                            q,
+                            out,
+                            box(*lines.bounds),
+                            i,
+                            self.logger.getEffectiveLevel()
+                        )
+                    ).start()
+            q.join()
+            self.logger.debug("Parallel processing complete")
+            # collect all the output into one list
+            while not out.empty():
+                vals.append(out.get())
             # output order is not guaranteed, so sort it on returning
             return sorted(vals, key=lambda x: x.i)
 
@@ -333,7 +340,7 @@ class DataSource:
     def __parallel_contour_worker__(
         self,
         q: mp.JoinableQueue,
-        out,
+        out: mp.Queue,
         i: int,
         loglevel: int
     ) -> None:
@@ -356,6 +363,38 @@ class DataSource:
             print(
                 "Thread " + str(i) + " processed " + str(jobcount) + " lines"
             )
+
+
+    def __parallel_raster_worker__(
+        self,
+        q: mp.JoinableQueue,
+        out: mp.Queue,
+        bbox: box,
+        i: int,
+        loglevel: int
+    ) -> None:
+        jobcount: int = 0
+        # taking a shortcut because the built-in logging
+        # becomes tricky with multiprocessing
+        if loglevel < logging.INFO:
+            print(
+                "Thread " + str(i) + " loading " + self.filename + " as raster"
+            )
+        # rasterio datasets can't be passed to child threads, so repeat the
+        # load in each thread.  Fortunately, this is a quick operation.
+        self.__read_raster__(bbox)
+        if loglevel < logging.INFO:
+            print("Thread " + str(i) + " deriving elevations from raster")
+        while not q.empty():
+            job = q.get()
+            out.put(self.__raster_line_lookups__(job["line"], job["i"]))
+            q.task_done()
+            jobcount += 1
+        if loglevel <= logging.INFO:
+            print(
+                "Thread " + str(i) + " processed " + str(jobcount) + " lines"
+            )
+        self.raster_dataset.close()
 
 
     def __nearest_contour__(self, point: Point) -> float:
@@ -457,8 +496,6 @@ class DataSource:
 
 
     def close(self) -> None:
-        if self.lookup_method == "raster":
-            self.raster_dataset.close()
         if self.download_method == "srtm":
             self.logger.info('Removing temp data file %s', self.filename)
             os.remove(self.filename)
