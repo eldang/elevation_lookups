@@ -37,7 +37,7 @@ The output should appear in your local `output` directory.
 1. Put an input file in `input/`, and make sure `output/` and `data/` folders exist
 2. `python3 main.py inputfilename`
 
-To specify how many parallel processes will be spawned to process the input, add the argument `--n_threads=X`.  If X == 1 then parallel processing will be sidestepped entirely; this can be useful for debugging.
+To specify how many parallel processes will be spawned to process the input, add the argument `--n_threads=X`.  If X == 1 then parallel processing will be sidestepped entirely; this can be useful for debugging.  If this argument is not set, then the script will default to using as many threads as CPUs are present.
 
 ## Data source options
 
