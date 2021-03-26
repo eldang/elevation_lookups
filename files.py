@@ -27,9 +27,12 @@ class OutputFile:
         self.file_path: str = os.path.join(output_dir, output_file)
 
         if os.path.exists(self.file_path):
-            self.logger.info("Overwriting existing %s", self.file_path)
+            self.logger.warning(
+                "Existing %s will be overwritten",
+                self.file_path
+            )
         else:
-            self.logger.info("Creating output file %s", self.file_path)
+            self.logger.info("Output will be saved to new %s", self.file_path)
 
         self.f = open(self.file_path, 'w')
 
@@ -94,6 +97,7 @@ class InputFile:
         n_threads: int
     ) -> None:
         vals: List[ElevationStats] = d.tag_multiline(self.__paths, n_threads)
+        self.logger.info("Writing output to %s", outfile)
         for row in vals:
             outfile.write_elevations(row)
 

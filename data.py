@@ -5,6 +5,7 @@
 import json
 import logging
 import math
+import multiprocessing as mp
 import os
 import time
 import urllib.request as ftp
@@ -55,6 +56,7 @@ class ElevationStats:
             'Total descent: ' +
             str(round(self.descent, SCREEN_PRECISION))
         ])
+
 
 
 class DataSource:
@@ -259,8 +261,6 @@ class DataSource:
                     "using unconverted values"),
                 self.source_units
             )
-        self.logger.info("Creating spatial index")
-        self.idx = self.gdf.sindex
 
 
     def __read_raster__(self, bbox: box) -> None:
@@ -283,29 +283,79 @@ class DataSource:
         n_threads: int
     ) -> List[ElevationStats]:
         vals: List[ElevationStats] = []
+        # allow multiprocessing to be sidestepped so there's always an
+        # option for simple, sequential runs for debugging purposes
         if n_threads == 1:
-            self.logger.debug('Processing singlethreaded.')
-            for i in range(len(lines)):
-                vals.append(self.tag_line(lines[i], i))
+            self.logger.info('Processing singlethreaded.')
+            if self.lookup_method == "contour_lines":
+                self.logger.info("Creating spatial index")
+                self.idx = self.gdf.sindex
+                self.logger.info("Deriving elevations from contours")
+                for i in range(len(lines)):
+                    vals.append(self.__contour_line_crossings__(
+                        lines[i], i)
+                    )
+            elif self.lookup_method == "raster":
+                for i in range(len(lines)):
+                    vals.append(self.__raster_line_lookups__(lines[i], i))
             return vals
         else:
-            self.logger.debug('Processing with %s threads', n_threads)
-            for i in range(len(lines)):
-                vals.append(self.tag_line(lines[i], i))
+            self.logger.info('Spawning %s threads', n_threads)
+            q: mp.JoinableQueue = mp.JoinableQueue()  # for processing
+            out: mp.Queue = mp.Queue()  # to collect output
+            if self.lookup_method == "contour_lines":
+                # put each line into the queue
+                for i in range(len(lines)):
+                    q.put({
+                        "line": lines[i],
+                        "i": i
+                    })
+                # start an appropriate number of workers
+                for i in range(n_threads):
+                    self.logger.debug("Spawning thread %s", i)
+                    worker = mp.Process(
+                        target=self.__parallel_contour_worker__,
+                        args=(q, out, i, self.logger.getEffectiveLevel())
+                    )
+                    worker.start()
+                q.join()
+                self.logger.debug("Parallel processing complete")
+                # collect all the output into one list
+                while not out.empty():
+                    vals.append(out.get())
+            elif self.lookup_method == "raster":
+                for i in range(len(lines)):
+                    vals.append(self.__raster_line_lookups__(lines[i], i))
+            # output order is not guaranteed, so sort it on returning
             return sorted(vals, key=lambda x: x.i)
 
 
-    def tag_line(self, line: LineString, i: int) -> ElevationStats:
-        if self.lookup_method == "contour_lines":
-            return self.__contour_line_crossings__(line, i)
-        elif self.lookup_method == "raster":
-            return self.__raster_line_lookups__(line, i)
-        else:
-            self.logger.critical(
-                "Lookup method %s is not defined",
-                self.lookup_method
+    def __parallel_contour_worker__(
+        self,
+        q: mp.JoinableQueue,
+        out,
+        i: int,
+        loglevel: int
+    ) -> None:
+        jobcount: int = 0
+        # taking a shortcut because the built-in logging
+        # becomes tricky with multiprocessing
+        if loglevel < logging.INFO:
+            print("Thread " + str(i) + " creating spatial index")
+        # spatial indexes can't be passed to child processes,
+        # so make one in each thread.  Fortunately, this is a quick operation.
+        self.idx = self.gdf.sindex
+        if loglevel < logging.INFO:
+            print("Thread " + str(i) + " deriving elevations from contours")
+        while not q.empty():
+            job = q.get()
+            out.put(self.__contour_line_crossings__(job["line"], job["i"]))
+            q.task_done()
+            jobcount += 1
+        if loglevel <= logging.INFO:
+            print(
+                "Thread " + str(i) + " processed " + str(jobcount) + " lines"
             )
-            exit(1)
 
 
     def __nearest_contour__(self, point: Point) -> float:

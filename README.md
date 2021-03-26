@@ -37,6 +37,8 @@ The output should appear in your local `output` directory.
 1. Put an input file in `input/`, and make sure `output/` and `data/` folders exist
 2. `python3 main.py inputfilename`
 
+To specify how many parallel processes will be spawned to process the input, add the argument `--n_threads=X`.  If X == 1 then parallel processing will be sidestepped entirely; this can be useful for debugging.
+
 ## Data source options
 
 By default, this project will use SRTM data to look up elevations.  This dataset has the advantage of global availability and ease of use, but it is limited by a coarse pixel size and 1m vertical resolution.  The pixel size between 56S and 60N is 0.00027̅°, which equates to 30m E-W at the equator and 15m E-W at 60N, and 30m N-S at any latitude.  In theory, the pixels triple in size at latitudes outside the range (56S, 60N), though in testing we are still finding 0.00027̅° pixels for Anchorage, Alaska, USA (> 61N).
