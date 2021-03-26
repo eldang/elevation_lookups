@@ -176,6 +176,12 @@ class DataSource:
                 exit(1)
         else:
             self.logger.info('Data file already saved at %s', self.filename)
+        # make a cropped raster if appropriate
+        if self.lookup_method == "raster":
+            srcfile: List[str] = [self.filename]
+            ext: str = self.filename.split('.')[-1]
+            self.filename += '_' + str(time.time()) + "_temp." + ext
+            self.__crop_raster__(bbox, srcfile)
 
 
     def __download_srtm__(self, bbox: box) -> None:
@@ -186,15 +192,15 @@ class DataSource:
             math.ceil(bbox.bounds[2]),
             math.ceil(bbox.bounds[3]),
         ]
-        self.srtm_tiles: List[str] = []
+        srtm_tiles: List[str] = []
         for x in range(tiles[0], tiles[2]):
             for y in range(tiles[1], tiles[3]):
-                self.srtm_tiles.append(os.path.join(
+                srtm_tiles.append(os.path.join(
                     self.filename,
                     "srtm." + str(x) + "." + str(y) + ".tif"
                 ))
         # download file[s] if appropriate
-        for filename in self.srtm_tiles:
+        for filename in srtm_tiles:
             file_needed: bool = True
             if os.path.exists(filename):
                 age: float = time.time() - os.stat(filename).st_mtime
@@ -218,15 +224,27 @@ class DataSource:
             self.filename,
             "temp_" + tile_id + "_" + str(time.time()) + ".tif"
         )
+        self.__crop_raster__(bbox, srtm_tiles)
+
+
+    def __crop_raster__(self, bbox: box, fnames: List[str]) -> None:
         self.logger.info(
-            'Saving SRTM data cropped to %s as %s',
+            'Saving raster data cropped to %s as %s',
             bbox.bounds,
             self.filename
         )
+        if self.source_crs != "EPSG:4326":
+            reprojector = pyproj.Transformer.from_crs(
+                crs_from=pyproj.CRS("EPSG:4326"),
+                crs_to=pyproj.CRS(self.source_crs),
+                always_xy=True
+            ).transform
+            bbox = transform(reprojector, bbox)
         rasterio.merge.merge(
-            self.srtm_tiles,
+            fnames,
             bounds=bbox.bounds,
-            dst_path=self.filename
+            dst_path=self.filename,
+            method='last'
         )
 
 
@@ -320,14 +338,14 @@ class DataSource:
             # collect all the output into one list
             vals: List[ElevationStats] = []
             while len(vals) != len(lines):
-                wait: float = 0.1
+                wait: int = 25
                 while(out.empty()):
                     self.logger.debug(
-                        "Pausing %s seconds for %s more lines of data",
+                        "Pausing %s milliseconds for %s more lines of data",
                         wait,
                         len(lines) - len(vals)
                     )
-                    time.sleep(wait)
+                    time.sleep(wait / 1000)
                     wait *= 2
                 vals.append(out.get())
             # clean up child processes
@@ -524,7 +542,7 @@ class DataSource:
 
 
     def close(self) -> None:
-        if self.download_method == "srtm":
+        if self.lookup_method == "raster":
             self.logger.info('Removing temp data file %s', self.filename)
             os.remove(self.filename)
 
