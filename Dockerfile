@@ -1,4 +1,4 @@
-FROM osgeo/proj
+FROM osgeo/gdal
 
 # https://stackoverflow.com/questions/52065842/python-docker-ascii-codec-cant-encode-character
 ENV LANG C.UTF-8
