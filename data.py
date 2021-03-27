@@ -514,7 +514,7 @@ class DataSource:
         stats.start = self.__raster_point_lookup__(Point(line.coords[0]))
         # deal with nodata returns
         while stats.start <= NULL_ELEVATION:
-            if len(line.coords) <= 1:
+            if len(line.coords) <= 2:
                 return ElevationStats()
             line.coords = line.coords[1:]
             stats.start = self.__raster_point_lookup__(
