@@ -47,7 +47,7 @@ It is also possible to configure locally preferred data sources.  See [below](#a
 
 Data files may be in any of the [vector formats supported by GDAL](https://gdal.org/drivers/vector/index.html), though note that for formats not marked as "Built-in by default" you may need to install additional prerequisites.  All common vector formats are supported by default.
 
-The enclosed [datasources.json](datasources.json) sets up [Seattle's open 2ft contour dataset](https://data-seattlecitygis.opendata.arcgis.com/datasets/contour-lines-1993) as an example.
+The enclosed [datasources.json](datasources.json) sets up [Seattle's open 2ft contour dataset](https://data-seattlecitygis.opendata.arcgis.com/datasets/contour-lines-1993) as an example.  Because it is defined after the LIDAR data, the LIDAR dataset is used if it covers the required area, falling back to this contour set for input files that are covered by it but not the LIDAR.
 
 **Important note**: a point's elevation is taken only from the nearest contour to it, with no attempt to interpolate.  This works well for 2ft contours in a hilly area, but may become a significant source of error for flatter regions or more widely spaced contours.
 
@@ -55,7 +55,7 @@ The enclosed [datasources.json](datasources.json) sets up [Seattle's open 2ft co
 
 Data files may be in any of the [raster formats supported by GDAL](https://gdal.org/drivers/raster/index.html), though note that for formats not marked as "Built-in by default" you may need to install additional prerequisites.  All common raster formats are supported by default.
 
-The enclosed [datasources.json](datasources.json) sets up "Delivery 1" from the Puget Sound LiDAR Consortium's [2016 King County data](http://pugetsoundlidar.ess.washington.edu/lidardata/restricted/projects/2016king_county.html) as an example.  It covers Seattle as well as some additional area S and E of Seattle.  Because it is defined after the Seattle 2ft contours, the contour dataset is used if it covers the required area, falling back to this LIDAR set for input files that are covered by it but not the contours.
+The enclosed [datasources.json](datasources.json) sets up "Delivery 1" from the Puget Sound LiDAR Consortium's [2016 King County data](http://pugetsoundlidar.ess.washington.edu/lidardata/restricted/projects/2016king_county.html) as an example.  It covers Seattle as well as some additional area S and E of Seattle.
 
 ## Input format
 
