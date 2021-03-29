@@ -6,9 +6,9 @@ This is intended as a way of addressing https://github.com/a-b-street/abstreet/i
 
 ## Installation / requirements
 
-This utility is being developed and tested in Python 3.9.2 on a Mac, and should in theory work with older versions of Python 3.  Before installing the modules listed in [requirements.txt](requirements.txt), make sure the following are present in the environment in which it will run:
+This utility is being developed and tested in Python 3.9.2 on a Mac & 3.8.5 on Linux, and should in theory work with older versions of Python 3.  Before installing the modules listed in [requirements.txt](requirements.txt), make sure the following are present in the environment in which it will run:
 
-* [GDAL](https://www.gdal.org/), tested with versions 3.2.1 & 3.2.2, should in theory work with any version >= 3.0.4.
+* [GDAL](https://www.gdal.org/), tested with versions 3.2.0 - 3.2.2, should in theory work with any version >= 3.0.4.
 * [GEOS](https://trac.osgeo.org/geos), tested with versions 3.6.2 & 3.9.1, should in theory work with any version >= 3.3.9.
 * [PROJ](https://proj.org/), tested with versions 7.2.1 & 8.0.0, should in theory work with any version >= 7.2.0.
 
@@ -49,7 +49,7 @@ It is also possible to configure locally preferred data sources.  See [below](#a
 
 Data files may be in any of the [vector formats supported by GDAL](https://gdal.org/drivers/vector/index.html), though note that for formats not marked as "Built-in by default" you may need to install additional prerequisites.  All common vector formats are supported by default.
 
-The enclosed [datasources.json](datasources.json) sets up [Seattle's open 2ft contour dataset](https://data-seattlecitygis.opendata.arcgis.com/datasets/contour-lines-1993) as an example.
+The enclosed [datasources.json](datasources.json) sets up [Seattle's open 2ft contour dataset](https://data-seattlecitygis.opendata.arcgis.com/datasets/contour-lines-1993) as an example.  Because it is defined after the LIDAR data, the LIDAR dataset is used if it covers the required area, falling back to this contour set for input files that are covered by it but not the LIDAR.  In practice this means it will very rarely be used; consider it more a demo than a practical feature.  In our testing we've found that the LIDAR data gets us very similar results in a fraction of the processing time.
 
 **Important note**: a point's elevation is taken only from the nearest contour to it, with no attempt to interpolate.  This works well for 2ft contours in a hilly area, but may become a significant source of error for flatter regions or more widely spaced contours.
 
@@ -57,7 +57,7 @@ The enclosed [datasources.json](datasources.json) sets up [Seattle's open 2ft co
 
 Data files may be in any of the [raster formats supported by GDAL](https://gdal.org/drivers/raster/index.html), though note that for formats not marked as "Built-in by default" you may need to install additional prerequisites.  All common raster formats are supported by default.
 
-The enclosed [datasources.json](datasources.json) sets up "Delivery 1" from the Puget Sound LiDAR Consortium's [2016 King County data](http://pugetsoundlidar.ess.washington.edu/lidardata/restricted/projects/2016king_county.html) as an example.  It covers Seattle as well as some additional area S and E of Seattle.  Because it is defined after the Seattle 2ft contours, the contour dataset is used if it covers the required area, falling back to this LIDAR set for input files that are covered by it but not the contours.
+The enclosed [datasources.json](datasources.json) sets up "Delivery 1" from the Puget Sound LiDAR Consortium's [2016 King County data](http://pugetsoundlidar.ess.washington.edu/lidardata/restricted/projects/2016king_county.html) as an example.  It covers Seattle as well as some additional area S and E of Seattle.
 
 ## Input format
 
