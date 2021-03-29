@@ -9,7 +9,7 @@
 			"download_method": "ftp",
 			"lookup_method": "raster",
 			"lookup_field": 1,
-			"units": "feet",
+			"units": "meters",
 			"recheck_interval_days": 100
 		},
 		{

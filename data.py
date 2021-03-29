@@ -60,6 +60,7 @@ class ElevationStats:
 
 
 
+
 class DataSource:
 
     def __init__(
@@ -250,6 +251,16 @@ class DataSource:
             dst_path=self.filename,
             method='last'
         )
+        if self.source_units in ["feet", "foot", "ft"]:
+            self.logger.info(
+                "Source elevations will be converted from feet to metres"
+            )
+        elif self.source_units not in ["meters", "metres", "m"]:
+            self.logger.warning(
+                ("Data source unit of '%s' not recognised; "
+                    "using unconverted values"),
+                self.source_units
+            )
 
 
     def __read_vectors__(self, bbox: box) -> None:
@@ -557,6 +568,11 @@ class DataSource:
                     previous_elevation = elevation
             # after the loop, we already have our final elevation
             stats.end = previous_elevation
+        if self.source_units in ["feet", "foot", "ft"]:
+            stats.start *= FOOT_IN_M
+            stats.end *= FOOT_IN_M
+            stats.climb *= FOOT_IN_M
+            stats.descent *= FOOT_IN_M
         return stats
 
 
