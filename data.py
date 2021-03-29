@@ -7,6 +7,7 @@ import logging
 import math
 import multiprocessing as mp
 import os
+import psutil  # type: ignore
 import time
 import urllib.request as ftp
 import warnings
@@ -306,6 +307,20 @@ class DataSource:
             return self.__serial_worker__(lines)
         else:
             self.logger.info('Spawning %s threads', n_threads)
+            if self.lookup_method == "raster":
+                fsize: int = os.path.getsize(self.filename)
+                footprint: int = fsize * n_threads
+                mem = psutil.virtual_memory()
+                if mem.available / footprint < 2:
+                    self.logger.warning(
+                        ('%s is %s GB. %s threads will each load their own '
+                            'copy, and there is only %s GB memory available. '
+                            'You may get faster results with fewer threads.'),
+                        self.filename,
+                        round(float(fsize) / 1024 / 1024 / 1024, 3),
+                        n_threads,
+                        round(mem.available / 1024 / 1024 / 1024, 3)
+                    )
             q: mp.JoinableQueue = mp.JoinableQueue()  # for processing
             out: mp.Queue = mp.Queue()  # to collect output
             # put each line into the queue
