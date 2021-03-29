@@ -6,9 +6,9 @@ This is intended as a way of addressing https://github.com/a-b-street/abstreet/i
 
 ## Installation / requirements
 
-This utility is being developed and tested in Python 3.9.2 on a Mac, and should in theory work with older versions of Python 3.  Before installing the modules listed in [requirements.txt](requirements.txt), make sure the following are present in the environment in which it will run:
+This utility is being developed and tested in Python 3.9.2 on a Mac & 3.8.5 on Linux, and should in theory work with older versions of Python 3.  Before installing the modules listed in [requirements.txt](requirements.txt), make sure the following are present in the environment in which it will run:
 
-* [GDAL](https://www.gdal.org/), tested with version 3.2.1, should in theory work with any version >= 3.0.4.
+* [GDAL](https://www.gdal.org/), tested with versions 3.2.0 - 3.2.2, should in theory work with any version >= 3.0.4.
 * [GEOS](https://trac.osgeo.org/geos), tested with versions 3.6.2 & 3.9.1, should in theory work with any version >= 3.3.9.
 * [PROJ](https://proj.org/), tested with versions 7.2.1 & 8.0.0, should in theory work with any version >= 7.2.0.
 
