@@ -357,7 +357,8 @@ class DataSource:
                     workers[i].terminate()
             for i in range(n_threads):
                 workers[i].join()
-                workers[i].close()
+                if hasattr(workers[i], 'close'):
+                    workers[i].close()
             self.logger.debug("Parallel processing complete")
             # output order is not guaranteed, so sort it on returning
             return sorted(vals, key=lambda x: x.i)
