@@ -540,7 +540,7 @@ class DataSource:
                         stats.descent += previous_elevation - elevation
                     previous_elevation = elevation
             # after the loop, we already have our final elevation
-            stats.end = elevation
+            stats.end = previous_elevation
         return stats
 
 
