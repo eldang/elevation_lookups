@@ -135,7 +135,7 @@ class DataSource:
         self.lookup_field = "1"
         self.source_units = "meters"
         self.recheck_days = 100
-        self.__download_srtm__(bbox)
+        self.__configure_srtm__(bbox)
 
 
     def __download_file__(self, bbox: box) -> None:
@@ -184,7 +184,7 @@ class DataSource:
             self.__crop_raster__(bbox, srcfile)
 
 
-    def __download_srtm__(self, bbox: box) -> None:
+    def __configure_srtm__(self, bbox: box) -> None:
         # make a list of file[s] needed
         tiles: List[int] = [
             math.floor(bbox.bounds[0]),
@@ -199,24 +199,8 @@ class DataSource:
                     self.filename,
                     "srtm." + str(x) + "." + str(y) + ".tif"
                 ))
-        # download file[s] if appropriate
-        for filename in srtm_tiles:
-            file_needed: bool = True
-            if os.path.exists(filename):
-                age: float = time.time() - os.stat(filename).st_mtime
-                if age > self.recheck_days * 60 * 60 * 24:
-                    self.logger.info(
-                        'Replacing %s because it`s > than %s days old',
-                        filename,
-                        self.recheck_days
-                    )
-                else:
-                    file_needed = False
-                    self.logger.info('Tile already saved at %s', filename)
-            else:
-                self.logger.info('Downloading %s', filename)
-            if file_needed:
-                eio.clip(bounds=[x, y, x + 1, y + 1], output=filename)
+                # download file[s] if appropriate
+                self.__download_srtm__(srtm_tiles[-1], x, y)
         # merge files to temp.....tif on disk
         tile_id: str = str(tiles[0]) + "_" + str(tiles[1])
         tile_id += "_" + str(tiles[2]) + "_" + str(tiles[3])
@@ -225,6 +209,25 @@ class DataSource:
             "temp_" + tile_id + "_" + str(time.time()) + ".tif"
         )
         self.__crop_raster__(bbox, srtm_tiles)
+
+
+    def __download_srtm__(self, filename: str, x: int, y: int) -> None:
+        file_needed: bool = True
+        if os.path.exists(filename):
+            age: float = time.time() - os.stat(filename).st_mtime
+            if age > self.recheck_days * 60 * 60 * 24:
+                self.logger.info(
+                    'Replacing %s because it`s > than %s days old',
+                    filename,
+                    self.recheck_days
+                )
+            else:
+                file_needed = False
+                self.logger.info('Tile already saved at %s', filename)
+        else:
+            self.logger.info('Downloading %s', filename)
+        if file_needed:
+            eio.clip(bounds=[x, y, x + 1, y + 1], output=filename)
 
 
     def __crop_raster__(self, bbox: box, fnames: List[str]) -> None:
