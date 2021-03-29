@@ -3,6 +3,8 @@
 # Look up elevation data for a batch of paths
 
 import logging
+import os
+import sys
 import time
 
 import click
@@ -37,6 +39,12 @@ __license__ = "Apache"
             'or leave out for default value: "datasources.json"')
 )
 @click.option(
+    '--n_threads',
+    default=os.cpu_count(),
+    help=('Number of processes to execute in parallel, '
+            'or leave out for default value of 1 process per CPU core')  # noqa: E127, E501
+)
+@click.option(
     '--log',
     type=click.Choice(
         ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
@@ -53,6 +61,7 @@ def main(
     output_dir: str,
     data_source_list: str,
     input_file: str,
+    n_threads: int,
     log: str
 ) -> None:
     start_time: float = time.time()
@@ -63,11 +72,19 @@ def main(
     logger = logging.getLogger(__name__)
     logger.setLevel(level=log)
     logger.debug("Starting run")
+    if os.cpu_count() is not None and n_threads > os.cpu_count():  # type: ignore  # noqa: E501
+        # don't stop the user,
+        # but warn them because this is unlikely to be efficient
+        logger.warning(
+            "Attempting to use more processes than the %s CPUs present",
+            os.cpu_count()
+        )
     infile = InputFile(__name__, input_dir, input_file)
     with DataSource(__name__, data_dir, data_source_list, infile.bbox()) as d:
         with OutputFile(__name__, output_dir, input_file) as outfile:
-            infile.process(d, outfile)
+            infile.tag_elevations(d, outfile, n_threads)
     logger.info("Run complete in %s.", elapsedTime(start_time))
+    sys.exit(0)
 
 
 

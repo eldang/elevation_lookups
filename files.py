@@ -27,9 +27,12 @@ class OutputFile:
         self.file_path: str = os.path.join(output_dir, output_file)
 
         if os.path.exists(self.file_path):
-            self.logger.info("Overwriting existing %s", self.file_path)
+            self.logger.warning(
+                "Existing %s will be overwritten",
+                self.file_path
+            )
         else:
-            self.logger.info("Creating output file %s", self.file_path)
+            self.logger.info("Output will be saved to new %s", self.file_path)
 
         self.f = open(self.file_path, 'w')
 
@@ -73,6 +76,8 @@ class InputFile:
         lines: List[LineString] = []
         with open(self.file_path) as f:
             for row in f:
+                if row.strip() == '':
+                    break
                 lines.append(self.__build_line__(row))
         self.__paths = MultiLineString(lines)
         self.logger.info("Found %s rows in %s", self.n_lines(), self.file_path)
@@ -85,10 +90,17 @@ class InputFile:
             coords.append((vals[0], vals[1]))
         return LineString(coords)
 
-    def process(self, d: DataSource, outfile: OutputFile) -> None:
-        for line in self.__paths:
-            vals: ElevationStats = d.process(line)
-            outfile.write_elevations(vals)
+    def tag_elevations(
+        self,
+        d: DataSource,
+        outfile: OutputFile,
+        n_threads: int
+    ) -> None:
+        vals: List[ElevationStats] = d.tag_multiline(self.__paths, n_threads)
+        self.logger.info("Writing output to %s", outfile)
+        for row in vals:
+            outfile.write_elevations(row)
+
 
     def bbox(self) -> box:
         return box(*self.__paths.bounds)
