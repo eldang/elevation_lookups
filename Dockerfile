@@ -5,7 +5,9 @@ ENV LANG C.UTF-8
 
 # Copy in the current project
 WORKDIR /elevation
-COPY . .
+COPY *.py .
+COPY *.json .
+COPY *.txt .
 
 # Build dependencies
 RUN apt-get update
