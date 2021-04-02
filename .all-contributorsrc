@@ -17,6 +17,21 @@
         "projectManagement",
         "review"
       ]
+    },
+    {
+      "login": "dabreegster",
+      "name": "Dustin Carlino",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1664407?v=4",
+      "profile": "http://abstreet.org",
+      "contributions": [
+        "bug",
+        "code",
+        "data",
+        "financial",
+        "ideas",
+        "platform",
+        "review"
+      ]
     }
   ],
   "contributorsPerLine": 7,
