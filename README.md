@@ -1,4 +1,7 @@
 # elevation
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 Takes an input file of paths described as series of points, outputs a file of data about the elevation changes along those paths.
 
@@ -97,3 +100,23 @@ Data sources are defined in [datasources.json](datasources.json).  The order of 
 * `units`: units of elevation; will be converted to metres if they aren't already
 * `recheck_interval_days`: how often to check for updates to the original source file; set to `null` to never check
 
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="https://eldang.xyz/"><img src="https://avatars.githubusercontent.com/u/1379812?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Eldan Goldenberg</b></sub></a><br /><a href="https://github.com/eldang/elevation_lookups/issues?q=author%3Aeldang" title="Bug reports">🐛</a> <a href="https://github.com/eldang/elevation_lookups/commits?author=eldang" title="Code">💻</a> <a href="https://github.com/eldang/elevation_lookups/commits?author=eldang" title="Documentation">📖</a> <a href="#projectManagement-eldang" title="Project Management">📆</a> <a href="https://github.com/eldang/elevation_lookups/pulls?q=is%3Apr+reviewed-by%3Aeldang" title="Reviewed Pull Requests">👀</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

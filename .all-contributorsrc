@@ -1,0 +1,28 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "eldang",
+      "name": "Eldan Goldenberg",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1379812?v=4",
+      "profile": "https://eldang.xyz/",
+      "contributions": [
+        "bug",
+        "code",
+        "doc",
+        "projectManagement",
+        "review"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "elevation_lookups",
+  "projectOwner": "eldang",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
