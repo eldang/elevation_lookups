@@ -42,6 +42,10 @@ Contributors who do not follow or enforce the Code of Conduct in good faith may 
 
 All contributions to this project, code and otherwise, will be publicly recognized  unless the contributor requests otherwise.  This is not limited to contributions that show up on Github; for example suggestions and feedback delivered by other channels count, as do any actions that uphold this covenant either by example or by reporting misbehavior.
 
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](README.md#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
+
 ## Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 1.4, available at https://www.contributor-covenant.org/version/1/4/code-of-conduct.html
