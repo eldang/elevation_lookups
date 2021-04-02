@@ -1,6 +1,6 @@
 # elevation
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 Takes an input file of paths described as series of points, outputs a file of data about the elevation changes along those paths.
@@ -111,6 +111,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tr>
     <td align="center"><a href="https://eldang.xyz/"><img src="https://avatars.githubusercontent.com/u/1379812?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Eldan Goldenberg</b></sub></a><br /><a href="https://github.com/eldang/elevation_lookups/issues?q=author%3Aeldang" title="Bug reports">🐛</a> <a href="https://github.com/eldang/elevation_lookups/commits?author=eldang" title="Code">💻</a> <a href="https://github.com/eldang/elevation_lookups/commits?author=eldang" title="Documentation">📖</a> <a href="#projectManagement-eldang" title="Project Management">📆</a> <a href="https://github.com/eldang/elevation_lookups/pulls?q=is%3Apr+reviewed-by%3Aeldang" title="Reviewed Pull Requests">👀</a></td>
+    <td align="center"><a href="http://abstreet.org"><img src="https://avatars.githubusercontent.com/u/1664407?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dustin Carlino</b></sub></a><br /><a href="https://github.com/eldang/elevation_lookups/issues?q=author%3Adabreegster" title="Bug reports">🐛</a> <a href="https://github.com/eldang/elevation_lookups/commits?author=dabreegster" title="Code">💻</a> <a href="#data-dabreegster" title="Data">🔣</a> <a href="#financial-dabreegster" title="Financial">💵</a> <a href="#ideas-dabreegster" title="Ideas, Planning, & Feedback">🤔</a> <a href="#platform-dabreegster" title="Packaging/porting to new platform">📦</a> <a href="https://github.com/eldang/elevation_lookups/pulls?q=is%3Apr+reviewed-by%3Adabreegster" title="Reviewed Pull Requests">👀</a></td>
   </tr>
 </table>
 
