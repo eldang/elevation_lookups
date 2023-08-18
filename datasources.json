@@ -23,6 +23,18 @@
 			"lookup_field": "CL93_ELEV",
 			"units": "feet",
 			"recheck_interval_days": 30
+		},
+		{
+			"name": "OS Terrain 50",
+			"url": "http://abstreet.s3-website.us-east-2.amazonaws.com/dev/data/input/shared/elevation/UK-dem-50m-4326.tif",
+			"filename": "UK-dem-50m-4326.tif",
+			"crs": "EPSG:4326",
+			"bbox": [-9.35049789,49.76665728, 2.7882733,60.9525423],
+			"download_method": "http",
+			"lookup_method": "raster",
+			"lookup_field": 1,
+			"units": "meters",
+			"recheck_interval_days": null
 		}
 	]
 }
