@@ -35,6 +35,18 @@
 			"lookup_field": 1,
 			"units": "meters",
 			"recheck_interval_days": null
+		},
+		{
+			"name": "Brest 50cm contours",
+			"url": "https://play.abstreet.org/dev/data/input/shared/elevation/brest.geojson.gz",
+			"filename": "brest_contours.geojson",
+			"crs": "ESRI:102110",
+			"bbox": [-4.552179, 48.355777, -4.434689727004813, 48.44768660963146],
+			"download_method": "http",
+			"lookup_method": "contour_lines",
+			"lookup_field": "ELEVATION",
+			"units": "meters",
+			"recheck_interval_days": null
 		}
 	]
 }
